@@ -1,0 +1,53 @@
+{
+  "name": "workout-app",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "start": "npm run start:tv",
+    "start:tv": "cross-env EXPO_TV=1 expo start --dev-client",
+    "start:mobile": "cross-env EXPO_TV=0 expo start --dev-client",
+    "web": "cross-env EXPO_TV=0 expo start --web",
+    "android": "npm run android:tv",
+    "android:tv": "cross-env EXPO_TV=1 expo run:android",
+    "android:mobile": "cross-env EXPO_TV=0 expo run:android",
+    "ios": "npm run ios:mobile",
+    "ios:mobile": "cross-env EXPO_TV=0 expo run:ios",
+    "prebuild:tv": "cross-env EXPO_TV=1 expo prebuild --clean --platform android",
+    "prebuild:mobile": "cross-env EXPO_TV=0 expo prebuild --clean --platform android",
+    "prebuild:ios": "cross-env EXPO_TV=0 expo prebuild --clean --platform ios",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings=0",
+    "test": "node --test tests/*.test.mjs",
+    "check": "npm run typecheck && npm run lint && npm test",
+    "export:web": "cross-env EXPO_TV=0 expo export --platform web --output-dir dist/web",
+    "export:android": "cross-env EXPO_TV=1 expo export --platform android --output-dir dist/android"
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "~57.0.15",
+    "expo": "~57.0.13",
+    "expo-constants": "~57.0.11",
+    "expo-dev-client": "~57.0.12",
+    "expo-linking": "~57.0.6",
+    "expo-router": "~57.0.13",
+    "expo-splash-screen": "~57.0.6",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "npm:react-native-tvos@0.86-stable",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.2",
+    "react-native-web": "~0.21.0"
+  },
+  "devDependencies": {
+    "@react-native-tvos/config-tv": "^0.1.6",
+    "@types/react": "~19.2.2",
+    "cross-env": "10.1.0",
+    "eslint": "^9.39.1",
+    "eslint-config-expo": "~57.0.2",
+    "typescript": "~6.0.3"
+  }
+}

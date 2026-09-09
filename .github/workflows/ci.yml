@@ -1,0 +1,60 @@
+name: Validate scaffold
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scaffold-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: '1'
+      EXPO_NO_TELEMETRY: '1'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npx expo install --check
+      - run: npm run export:web
+      - run: npm run export:android
+      - name: Generate Android TV native configuration
+        run: npm run prebuild:tv -- --no-install
+      - name: Verify TV launcher and optional touchscreen
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const xml = readFileSync('android/app/src/main/AndroidManifest.xml', 'utf8');
+          assert.match(xml, /android.intent.category.LEANBACK_LAUNCHER/);
+          const touch = xml.match(/<uses-feature\b[^>]*android:name="android.hardware.touchscreen"[^>]*>/)?.[0];
+          assert.ok(touch, 'touchscreen feature must be declared');
+          assert.match(touch, /android:required="false"/);
+          NODE
+      - name: Verify switching back to Android phone
+        run: |
+          npm run prebuild:mobile -- --no-install
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const xml = readFileSync('android/app/src/main/AndroidManifest.xml', 'utf8');
+          assert.doesNotMatch(xml, /android.intent.category.LEANBACK_LAUNCHER/);
+          assert.match(xml, /android.intent.category.LAUNCHER/);
+          NODE
+      - name: Ensure native generation did not change dependencies
+        run: git diff --exit-code -- package.json package-lock.json

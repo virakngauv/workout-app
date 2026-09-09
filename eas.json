@@ -1,0 +1,26 @@
+{
+  "cli": {
+    "appVersionSource": "local"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": { "EXPO_TV": "0" },
+      "android": { "buildType": "apk" }
+    },
+    "development_tv": {
+      "extends": "development",
+      "env": { "EXPO_TV": "1" }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": { "EXPO_TV": "0" },
+      "android": { "buildType": "apk" }
+    },
+    "preview_tv": {
+      "extends": "preview",
+      "env": { "EXPO_TV": "1" }
+    }
+  }
+}

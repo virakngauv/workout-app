@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "workout-app",
+    "slug": "workout-app",
+    "version": "0.1.0",
+    "scheme": "workout-app",
+    "platforms": ["android", "ios", "web"],
+    "ios": {
+      "bundleIdentifier": "com.virakngauv.workoutapp"
+    },
+    "android": {
+      "package": "com.virakngauv.workoutapp"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-dev-client",
+      "expo-splash-screen",
+      [
+        "@react-native-tvos/config-tv",
+        {
+          "androidTVRequired": false,
+          "androidTVBanner": "./assets/tv-banner.png"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
