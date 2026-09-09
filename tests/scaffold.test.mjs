@@ -12,6 +12,7 @@ test('the app uses the TV fork, Router, and a consistent npm lockfile', () => {
   assert.equal(pkg.private, true);
   assert.equal(pkg.main, 'expo-router/entry');
   assert.match(pkg.dependencies['react-native'], /^npm:react-native-tvos@/);
+  assert.deepEqual(pkg.expo.install.exclude, ['react-native']);
   const lock = readJson('package-lock.json');
   assert.deepEqual(lock.packages[''].dependencies, pkg.dependencies);
   assert.deepEqual(lock.packages[''].devDependencies, pkg.devDependencies);
