@@ -54,5 +54,12 @@
   },
   "overrides": {
     "react-native": "$react-native"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "react-native"
+      ]
+    }
   }
 }
