@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+
+# Expo and local development metadata
+.expo/
+expo-env.d.ts
+.expo-shared/
+
+# Generated native projects (Expo Continuous Native Generation)
+/android/
+/ios/
+
+# Bundles, installers, caches, coverage, and logs
+/dist/
+/web-build/
+/build/
+/coverage/
+.cache/
+.metro-cache/
+*.tsbuildinfo
+*.apk
+*.aab
+*.ipa
+*.log
+
+# Environment files: examples remain trackable
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Signing material and local credentials
+credentials.json
+*.jks
+*.keystore
+*.p8
+*.p12
+*.pfx
+*.pem
+*.key
+*.mobileprovision
+
+# Machine/editor-specific files
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Intentionally tracked: package-lock.json, app/Metro/TypeScript config,
+# application source, development assets, and environment examples.
