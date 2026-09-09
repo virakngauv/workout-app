@@ -17,9 +17,11 @@ A minimal **Android TV-first** development scaffold using **Expo, TypeScript, Re
 | Dependencies | npm and the committed `package-lock.json` |
 | Checks | TypeScript, Expo ESLint configuration, Node scaffold tests, GitHub Actions |
 
-This follows the dependency/configuration approach in the [official Expo TV guide](https://docs.expo.dev/guides/building-for-tv/) and [Router TV example](https://github.com/expo/examples/tree/master/with-router-tv), without their demo UI or optional feature libraries. The [Router installation guide](https://docs.expo.dev/router/installation/) describes the routing dependencies.
+This follows the dependency/configuration approach in the [official Expo TV guide](https://docs.expo.dev/guides/building-for-tv/) and [Router TV example](https://github.com/expo/examples/tree/master/with-router-tv), without their demo UI or app-feature dependencies. The [Router installation guide](https://docs.expo.dev/router/installation/) describes the routing dependencies.
 
 The React Native TV fork is intentional. Do not replace it with upstream `react-native` to silence a dependency warning. Upgrade Expo and the TV fork together.
+
+Reanimated 4.5.1 and Worklets 0.10.1 are pinned to Expo-compatible versions for Router's native peer dependency graph; no animation features are implemented. The targeted npm override `"react-native": "$react-native"` keeps transitive React Native requests on the same TV fork. This avoids installing an upstream runtime alongside it and does not disable peer checks globally. Keep this override when updating the compatible dependency set; do not use `--force` or `--legacy-peer-deps` as a general dependency fix.
 
 ## Prerequisites
 
@@ -71,7 +73,7 @@ npm run start:tv
 
 Edit `src/app/index.tsx` and save. Ordinary JavaScript/TypeScript component changes use [React Native Fast Refresh](https://reactnative.dev/docs/fast-refresh); they do not require a new APK. Some edits reset state or reload the app.
 
-Rebuild after adding/changing native modules, permissions, native configuration, or launcher assets. Stop an old Metro process before changing targets. Start with `-- --clear` if Metro has stale cache state.
+After changing native dependencies, permissions, app/plugin configuration, or launcher assets, regenerate and rebuild with `npm run prebuild:tv` followed by `npm run android:tv` (or the matching phone commands). A JavaScript reload alone does not apply native changes. Stop an old Metro process before changing targets. Use `npm run start:tv -- --clear` if Metro has stale cache state.
 
 Browser preview is optional:
 
@@ -144,7 +146,7 @@ npm run export:android        # production Android TV JS/assets bundle
 npm run prebuild:tv -- --no-install
 ```
 
-GitHub Actions performs these checks and verifies generated TV/mobile Android manifests. The workflow is read-only and does not publish, deploy, build signed releases, or provision cloud services.
+GitHub Actions performs these checks and verifies generated TV/mobile Android manifests. Its actions are pinned to commit SHAs. The workflow is read-only and does not publish, deploy, build signed releases, or provision cloud services.
 
 **A Metro export is not an APK. A successful prebuild is not native compilation.** Native compilation, installation, real-remote behavior, and physical-device performance must be verified separately. iOS device testing and store readiness are not implied by these checks.
 
