@@ -81,3 +81,10 @@ Not verified: native compilation/APK installation, emulator D-pad focus, real TV
 - Artwork shows representative variants: the bridge is bodyweight, the RDL uses one kettlebell, and the push-up uses a wall. Session loads remain the source prescriptions.
 - TypeScript, ESLint, seven tests, Expo compatibility check, and Android export pass.
 - ADB reports no connected devices. Native compilation, emulator D-pad validation, and hardware use remain unverified.
+
+## Subsequent device and rest-time updates
+
+- Built and installed the standalone APK on a physical Android 10 TV. Confirmed the home screen and initial Start workout focus; full remote workout traversal remains unverified.
+- Renamed the launcher entry GetFit and installed its smiling kettlebell icon/banner; verified the Favorite Apps tile on the physical TV.
+- Changed all energy presets to 45-second rest. Session tests assert 45 seconds between every set across all routines and energy levels. Earlier screenshots and timing notes above document previous builds, not the current prescription.
+- The installed TV APK predates the 45-second change; the new rest time requires another build/install. Decorative fidelity remains optional follow-up work.
