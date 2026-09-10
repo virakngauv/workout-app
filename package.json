@@ -8,6 +8,9 @@
   },
   "scripts": {
     "start": "npm run start:tv",
+    "check:tv": "node scripts/check-tv-emulator.mjs",
+    "prestart:tv": "npm run check:tv",
+    "preandroid:tv": "npm run check:tv",
     "start:tv": "cross-env EXPO_TV=1 expo start --dev-client",
     "start:mobile": "cross-env EXPO_TV=0 expo start --dev-client",
     "web": "cross-env EXPO_TV=0 expo start --web",
