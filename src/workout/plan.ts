@@ -65,5 +65,7 @@ export const weeks: PlanDay[][] = [
   [{ label: 'Workout A', workout: 'A' }, { label: 'Easy cardio', note: '20–25 min · incline walk, easy jog, or dancing' }, { label: 'Rest / walk' }, { label: 'Workout A', workout: 'A' }, { label: 'Rest or easy cardio' }, { label: 'Optional Pilates / walk' }, { label: 'Rest' }],
   [{ label: 'Workout A', workout: 'A' }, { label: 'Cardio', note: '20–30 min' }, { label: 'Rest / Pilates' }, { label: 'Workout B', workout: 'B' }, { label: 'Rest or easy cardio' }, { label: 'Optional A / Pilates', workout: 'A', note: 'Optional strength only if fully recovered and not unusually sore or fatigued.' }, { label: 'Rest' }],
   [{ label: 'Workout A', workout: 'A' }, { label: 'Cardio', note: '20–30 min' }, { label: 'Workout B', workout: 'B' }, { label: 'Rest / Pilates' }, { label: 'Cardio', note: '20–30 min' }, { label: 'Workout C', workout: 'C' }, { label: 'Rest' }],
+  // The source plan repeats Week 3 for Week 4 and beyond.
+  [{ label: 'Workout A', workout: 'A' }, { label: 'Cardio', note: '20–30 min' }, { label: 'Workout B', workout: 'B' }, { label: 'Rest / Pilates' }, { label: 'Cardio', note: '20–30 min' }, { label: 'Workout C', workout: 'C' }, { label: 'Rest' }],
 ];
-export const getWeek = (week: number) => weeks[Math.min(2, Math.max(0, week - 1))]!;
+export const getWeek = (week: number) => weeks[Math.min(weeks.length - 1, Math.max(0, week - 1))]!;

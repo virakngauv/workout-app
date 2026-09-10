@@ -12,7 +12,7 @@ for (const name of ['plan', 'session']) {
   const source = readFileSync(`src/workout/${name}.ts`, 'utf8').replace("from './plan'", "from './plan.mjs'");
   writeFileSync(join(folder, `${name}.mjs`), ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText);
 }
-const { prescription, workouts, energies, getWeek } = await import(pathToFileURL(join(folder, 'plan.mjs')));
+const { prescription, workouts, energies, getWeek, weeks } = await import(pathToFileURL(join(folder, 'plan.mjs')));
 const { startSession, sessionReducer } = await import(pathToFileURL(join(folder, 'session.mjs')));
 
 test('energy presets stay within source rep ranges, retain load, and reduce only Gentle sets', () => {
@@ -27,7 +27,10 @@ test('energy presets stay within source rep ranges, retain load, and reduce only
   assert.equal(getWeek(1).filter(day => day.workout).length, 2);
   assert.equal(getWeek(2)[5].workout, 'A');
   assert.match(getWeek(2)[5].note, /Optional/);
+  assert.equal(weeks.length, 4);
   assert.deepEqual(getWeek(4), getWeek(3));
+  assert.equal(getWeek(0), weeks[0]);
+  assert.equal(getWeek(5), weeks[3]);
 });
 
 test('each complete session traverses every prescribed set once and ends on the last set', () => {

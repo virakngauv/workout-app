@@ -20,16 +20,6 @@ Optional separate asset, same attached reference:
 
 > Create one small hand-drawn sprig of three peach flowers with muted sage green leaves, in the soft pastel storybook style of the attached TV interface. 500 × 700 pixels. Warm dark brown pencil outlines, minimal detail, generous clear space around the sprig. Solid warm ivory background #FFF9F1. No text, shadows, frame, characters, or UI.
 
-## Remaining instructional artwork
-
-Each movement needs its own inspected illustration, with pose-specific labels. Keep the same adult model, proportions, outfit, palette, and uncluttered framing. Do not generate a sprite sheet or reuse the squat drawing to illustrate other movements.
-
-Workout A still needs Romanian deadlift, one-arm dumbbell row, floor chest press, standing shoulder press, glute bridge, and dead bug.
-
-Workouts B/C additionally need reverse lunge, kettlebell deadlift, bent-over row, incline/wall push-up, lateral raise, plank, split squat, and side plank. The source plan includes a glute bridge/hip thrust choice; the bridge can use its existing appropriate illustration.
-
-Text form reminders are currently shown for every exercise until its own art is supplied. The visual implementation is not complete until the selected home-screen artwork is integrated and compared again.
-
-
 ## Exercise artwork received
-All 15 exercise illustrations are now supplied and integrated unchanged. No further exercise image generation is needed. Decorative artwork remains optional and pending.
+
+All 15 exercise illustrations are supplied and integrated unchanged, with movement-specific labels. No further exercise image generation is needed. The goblet-squat prompt above is retained as the original request, not outstanding work. Decorative artwork remains optional and pending.
