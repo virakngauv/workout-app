@@ -36,12 +36,22 @@ No Expo account, API keys, Google Play developer account, or backend is required
 ```sh
 git clone https://github.com/virakngauv/workout-app.git
 cd workout-app
-# With nvm installed: nvm install && nvm use
+# With fnm installed: fnm install && fnm use
+# Alternatively, with nvm: nvm install && nvm use
+node --version # Must be v24.x
 npm ci
 npm run check
 ```
 
 Use `npm ci` for an existing checkout. Use `npm install` or `npx expo install <package>` deliberately when changing dependencies, and commit the resulting lockfile. Do not commit `node_modules/`.
+
+The project declares Node 24 in `.nvmrc` and `package.json`. If you use fnm with zsh, add the following to `~/.zshrc` (replace any existing fnm initialization rather than duplicating it):
+
+```sh
+eval "$(fnm env --use-on-cd --shell zsh)"
+```
+
+Open a new terminal after changing shell configuration. fnm will select the version from `.nvmrc` when you enter the project directory; install it once with `fnm install` if needed. Verify with `node --version`. Non-interactive automation may not load shell hooks; use `fnm exec --using=24 npm run check` or explicitly select Node 24 in that environment. See the [fnm shell setup](https://github.com/Schniz/fnm#shell-setup).
 
 ## First Android TV run
 
@@ -61,6 +71,25 @@ npm run android:tv -- --device
 ```
 
 **Use this custom development build, not Expo Go.** Expo Go is not the native TV runtime used by this project. See [Expo development builds](https://docs.expo.dev/develop/development-builds/introduction/) and the [TV guide](https://docs.expo.dev/guides/building-for-tv/).
+
+### Emulator Home/Back readiness
+
+Enable **hardware keyboard input** for each new or recreated TV AVD. Its `config.ini` must contain `hw.keyboard=yes`; keep the TV D-pad enabled. We observed toolbar Home/Back producing no hardware key events with `hw.keyboard=no`, even though `adb shell input keyevent` worked. Enabling the keyboard and restarting restored toolbar input.
+
+```sh
+npm run check:tv
+```
+
+This read-only, advisory check runs automatically before `npm run start:tv` and `npm run android:tv` (including their default aliases). It inspects local Android TV/Google TV AVDs and warns when keyboard input is disabled or unspecified. It uses `ANDROID_AVD_HOME`, or `ANDROID_USER_HOME/avd`, or the default `~/.android/avd`, and follows AVD metadata paths for relocated devices. It does not block physical-TV development, change emulator settings, or verify SDK/JDK installation. Direct Expo commands bypass the npm checks. Warnings for an unused AVD do not imply the selected device is broken.
+
+If toolbar Home/Back do nothing:
+
+1. Fully stop the affected emulator.
+2. Open its `config.ini` (normally `~/.android/avd/<name>.avd/config.ini`) and set `hw.keyboard=yes`.
+3. Cold boot the AVD from Device Manager, or run `emulator -avd <name> -no-snapshot-load`. Do not wipe its data.
+4. Run `npm run check:tv`, then test the actual toolbar Home/Back buttons. A passing configuration check or working adb input alone does not prove toolbar input works.
+
+The setting persists for that AVD. Check it again if you recreate the device. This is emulator configuration, so it belongs outside the generated project's `android/` directory.
 
 ## Daily development loop
 

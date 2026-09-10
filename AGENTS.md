@@ -24,6 +24,7 @@ The repository is currently scaffolding only. Do not infer workout features, dat
 - Do not build these components preemptively in the scaffolding task.
 
 ## Workflow and validation
+- Before running npm or Expo commands, select the Node version declared in `.nvmrc` and verify it with `node --version`. With fnm, use `fnm use`; for non-interactive commands, use `fnm exec --using=24 <command>`.
 - Work in focused branches/PRs. Do not let multiple agents modify overlapping files concurrently.
 - Run `npm run check` and `npx expo install --check` before submitting.
 - For configuration/dependency changes, also run `npm run export:web`, `npm run export:android`, and the applicable prebuild command.
