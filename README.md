@@ -1,8 +1,8 @@
-# workout-app
+# GetFit
 
-A minimal **Android TV-first** development scaffold using **Expo, TypeScript, React Native TV, and Expo Router**. Android/iOS phone compatibility is retained, with a web preview for development.
+An **Android TV-first** workout interface using **Expo, TypeScript, React Native TV, and Expo Router**. Android/iOS phone compatibility is retained, with a web preview for development.
 
-**Status:** infrastructure only. There are no workout features, data models, accounts, backend services, or product/design decisions. The single route and monochrome TV banner are development placeholders, not proposed UI or branding.
+**Status:** the selected peach design is in progress. The app includes an energy selector, a four-week schedule, routines A/B/C, set completion, rest countdown, pause/resume, and a completion screen. All 15 user-supplied exercise illustrations are integrated with movement-specific labels and form cues. Artwork depicts representative equipment variants; the session prescription specifies the planned load. Session state is in memory and resets when the app reloads. No accounts, backend, or workout-history storage are implemented. See `design/asset-prompts.md` and `design-qa.md` for remaining work.
 
 ## Stack
 
@@ -110,13 +110,40 @@ Browser preview is optional:
 npm run web
 ```
 
-A browser preview is not a TV focus/navigation test. Future interactive UI must be exercised using D-pad directions, Select, and Back on an Android TV emulator and real device. This placeholder has no interactive controls yet.
+A browser preview is not a TV focus/navigation test. Exercise the interface using D-pad directions, Select, and Back on an Android TV emulator and real device. The web preview also supports arrows, Enter, and Escape. Browser keyboard checks are not proof of native TV focus behavior.
 
 ## Use a physical TV
 
 An APK needs an Android-compatible device. Confirm the actual operating system/model rather than assuming every Hisense TV runs Android. For this project, target a **Hisense running Google TV/Android TV**, or a **Chromecast with Google TV**. Do not assume a VIDAA/Roku television or a classic casting-only Chromecast can install this APK. Start with the emulator while hardware details are unconfirmed.
 
 Enable developer options/debugging on the compatible device. The exact menus and available debugging modes depend on its firmware. Follow [Android's device/debugging instructions](https://developer.android.com/studio/run/device) and use the IP/ports the device actually exposes.
+
+### Wi-Fi debugging on older Android TVs
+
+Verified on a physical Hisense Android 10 TV: enabling **USB debugging** also exposed ADB over the local network, without a USB cable or a separate Wireless debugging menu. This is firmware-dependent; an Android 13 upgrade was not needed on the tested TV.
+
+1. Put the TV and computer on the same trusted network, with the TV awake. Avoid guest-network/client isolation.
+2. Open Settings → Device Preferences (or System) → About, then select Build seven times to enable developer options.
+3. Open Developer options and enable **USB debugging**.
+4. Find the TV's current IP address in Network settings or About → Status.
+5. Try the following, replacing `TV_IP` with that address:
+
+```sh
+adb connect TV_IP:5555
+adb devices
+```
+
+Accept **Allow USB debugging?** on the TV for your computer, even though the connection is wireless. `adb devices` should then show `device`, rather than `unauthorized`. If `adb` is not on your Mac's PATH, Android Studio's usual SDK location is `~/Library/Android/sdk/platform-tools/adb`.
+
+Troubleshooting:
+
+- **Failed to authenticate / unauthorized:** check for the authorization prompt on the TV. If none appears, toggle USB debugging off and on, then reconnect.
+- **No route to host / timeout:** verify the IP, network, and that the TV is awake. On macOS, check Privacy & Security → Local Network for the terminal or app running ADB. A successful ping alone does not prove ADB access; try the connection from your normal Terminal and accept any permission prompts. This resolved access during the physical-device setup, though the exact cause was not established.
+- **Connection refused:** the TV may not expose network ADB through USB debugging. Port 5555 is a firmware-dependent option, not a universal Android TV feature.
+
+See [Google's Android TV debugging guide](https://developers.google.com/cast/docs/android_tv_receiver/debugging) for network ADB and [Android's ADB documentation](https://developer.android.com/tools/adb) for connection and authorization details.
+
+### TVs with a Wireless debugging menu
 
 For devices offering wireless pairing:
 
@@ -183,6 +210,31 @@ GitHub Actions performs these checks and verifies generated TV/mobile Android ma
 
 A development client uses Metro. For an app that launches without your computer, build a release/preview APK with JavaScript bundled inside it.
 
+### Local standalone test APK
+
+With the Android SDK and JDK configured, generate the TV target and compile locally:
+
+```sh
+npm run prebuild:tv -- --no-install
+cd android
+./gradlew assembleRelease
+```
+
+The APK is written to `android/app/build/outputs/apk/release/app-release.apk` relative to the repository root. The generated project's current release build uses its debug signing configuration: this is a standalone test APK, not a production-signed distribution. Prebuild replaces generated native files, so keep configuration in Expo config/plugins.
+
+The first observed local build took **6 minutes 21 seconds**, as reported by Gradle, excluding installation. This is one measurement, not an estimate for every machine; dependency downloads, hardware, and build caches affect timing. The resulting APK was installed and launched successfully on a physical Android 10 TV with a 32-bit ARM processor. Home-screen rendering and initial focus were verified; a full physical-remote workout test remains outstanding.
+
+From the repository root, install and launch it on an authorized TV:
+
+```sh
+adb -s TV_IP:5555 install -r android/app/build/outputs/apk/release/app-release.apk
+adb -s TV_IP:5555 shell am start -n com.virakngauv.workoutapp/.MainActivity
+```
+
+Use the actual device address/port reported by `adb devices`. This build includes the JavaScript and artwork and runs without Metro or the computer remaining online.
+
+### Optional EAS builds
+
 `eas.json` provides these optional profiles:
 
 | Profile | Target | Purpose |
@@ -212,7 +264,11 @@ An update requires the same application ID and compatible signing key. Switching
 
 ```text
 src/app/_layout.tsx         Minimal Router root
-src/app/index.tsx           Startup diagnostic only
+src/app/index.tsx           Home, weekly plan, and session screens
+src/workout/               Source plan, energy presets, session logic, form cues
+src/components/            Shared remote-friendly button
+assets/fonts/              Bundled Baloo 2 / Nunito fonts and OFL licenses
+design/                    Selected visual target, asset prompts, QA evidence
 assets/tv-banner.png        Disposable 320 x 180 development banner
 app.json                   App identity and config plugins
 metro.config.js            Expo defaults; no custom resolver yet
@@ -224,6 +280,20 @@ AGENTS.md                  Codex/Z.ai/contributor guardrails
 
 `com.virakngauv.workoutapp`, the app name, and the banner are development placeholders; review identity/signing before distributing broadly. The scaffold does not select a license, production brand, backend, authentication system, analytics, media stack, or component library. Apple TV is not a configured/tested target in this scaffold.
 
-Only routes exist under `src` for now. Add feature/component/service directories when there is real code to put in them. Share business logic between platforms; do not force identical TV and touch layouts. Read `AGENTS.md` before using a coding agent.
+Workout data and session behavior live under `src/workout`; the shared button is under `src/components`. Share business logic between platforms; do not force identical TV and touch layouts. Read `AGENTS.md` before using a coding agent.
 
 Environment files, generated output, native projects, and signing credentials are ignored. `.env.example` and `.env.*.example` remain trackable; none are needed yet. Never place secrets in `EXPO_PUBLIC_*` variables, which are embedded in the client bundle. Keep the npm lockfile and configuration in Git.
+
+## Current energy behavior
+
+- **Gentle:** one fewer set per exercise (minimum one), lower rep/time target, 45-second rest.
+- **Steady:** source sets and rep/time ranges, 45-second rest.
+- **Energized:** source sets, upper rep/time target, 45-second rest.
+
+These are explicit app presets, not rules from the PDF. Weight choices never change automatically. Routines retain the PDF's starting loads; suggested future load progressions are not automated. Sets are marked complete manually, including timed holds and both sides of unilateral movements. The rest countdown stops at zero and waits for the user to continue. Back pauses an active session; Back again resumes. Ending early returns home without recording a completed workout.
+
+The selected visual direction uses bundled Baloo 2 ExtraBold and Nunito (SIL Open Font License from the Google Fonts repository), plus Expo Ionicons. No AI image generation was used during implementation.
+
+## Launcher artwork
+
+The Android launcher name is **GetFit**. Expo config references the square icon at `assets/icon.png` and TV banner at `assets/tv-banner.png`. The simple smiling kettlebell is rendered locally with `python3 scripts/render-launcher.py` (requires Pillow); no image-generation service is used. After changing these assets, clean-prebuild and rebuild the APK to update the installed launcher entry.
