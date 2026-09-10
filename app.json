@@ -1,10 +1,14 @@
 {
   "expo": {
-    "name": "workout-app",
+    "name": "GetFit",
     "slug": "workout-app",
     "version": "0.1.0",
     "scheme": "workout-app",
-    "platforms": ["android", "ios", "web"],
+    "platforms": [
+      "android",
+      "ios",
+      "web"
+    ],
     "ios": {
       "bundleIdentifier": "com.virakngauv.workoutapp"
     },
@@ -25,10 +29,12 @@
           "androidTVRequired": false,
           "androidTVBanner": "./assets/tv-banner.png"
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "icon": "./assets/icon.png"
   }
 }
