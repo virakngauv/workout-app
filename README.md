@@ -268,6 +268,7 @@ src/app/index.tsx           Home, weekly plan, and session screens
 src/workout/               Source plan, energy presets, session logic, form cues
 src/components/            Shared remote-friendly button
 assets/fonts/              Bundled Baloo 2 / Nunito fonts and OFL licenses
+assets/splash-icon.png     Transparent native splash mark
 design/                    Selected visual target, asset prompts, QA evidence
 assets/tv-banner.png        Disposable 320 x 180 development banner
 app.json                   App identity and config plugins
@@ -294,6 +295,6 @@ These are explicit app presets, not rules from the PDF. Weight choices never cha
 
 The selected visual direction uses bundled Baloo 2 ExtraBold and Nunito (SIL Open Font License from the Google Fonts repository), plus Expo Ionicons. No AI image generation was used during implementation.
 
-## Launcher artwork
+## Launcher and splash artwork
 
-The Android launcher name is **GetFit**. Expo config references the square icon at `assets/icon.png` and TV banner at `assets/tv-banner.png`. The simple smiling kettlebell is rendered locally with `python3 scripts/render-launcher.py` (requires Pillow); no image-generation service is used. After changing these assets, clean-prebuild and rebuild the APK to update the installed launcher entry.
+The Android launcher name is **GetFit**. Expo config references the square icon at `assets/icon.png`, TV banner at `assets/tv-banner.png`, and transparent native splash mark at `assets/splash-icon.png`. The splash uses the same warm-ivory background as the first React Native frame and remains visible until bundled fonts are ready, then fades into the welcome screen. The simple smiling kettlebell assets are rendered locally with `python3 scripts/render-launcher.py` (requires Pillow); no image-generation service is used. After changing these assets, clean-prebuild and rebuild the APK to update the installed launcher and splash resources.

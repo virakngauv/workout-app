@@ -22,7 +22,15 @@
     "plugins": [
       "expo-router",
       "expo-dev-client",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFF9F1",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 240,
+          "resizeMode": "contain"
+        }
+      ],
       [
         "@react-native-tvos/config-tv",
         {

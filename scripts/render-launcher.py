@@ -1,4 +1,4 @@
-"""Render the simple GetFit launcher mark from geometric shapes (no generated artwork).
+"""Render the simple GetFit launcher and splash marks from geometric shapes.
 Requires Pillow. Run from the repository root.
 """
 from pathlib import Path
@@ -32,6 +32,14 @@ d.ellipse((120,120,904,904),fill=CREAM)
 kettlebell(d,212,200,600)
 sparkle(d,800,250,55)
 icon.save('assets/icon.png')
+
+# The native splash provides its own warm-ivory background. Keeping the mark
+# transparent avoids a visible square around it on phones and televisions.
+splash=Image.new('RGBA',(1024,1024),(0,0,0,0))
+d=ImageDraw.Draw(splash)
+kettlebell(d,212,200,600)
+sparkle(d,800,250,55)
+splash.save('assets/splash-icon.png')
 
 banner=Image.new('RGB',(1280,720),PEACH)
 d=ImageDraw.Draw(banner)
