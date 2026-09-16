@@ -24,7 +24,7 @@ The screenshots use the 1280 × 720 web preview to document responsive layout an
 | Web, 390 × 844 | Checked the narrow stacked layout with an exact browser viewport: document width remained 390 px and all interactive controls stayed within the viewport. |
 | Android TV native configuration | Clean prebuild generated the splash resources; Android export completed. |
 | Android TV emulator | Not run in this environment. Native splash timing and D-pad behavior still require emulator validation. |
-| Physical Android TV | Not run in this environment. Native splash timing and real-remote focus behavior still require hardware validation. |
+| Physical Android TV | Installed and launched the release APK on a 1920 × 1080 Android 10 TV (960 × 540 logical viewport); verified the home screen rendered, initial focus, the plan screen, and a launch recording showing the splash artwork fully visible. Native splash timing and the complete real-remote workout flow remain outstanding. |
 | Android/iOS phone | Narrow web layout checked; native devices were not available. |
 
 Automated exports and prebuilds are not compiled APKs or device tests.

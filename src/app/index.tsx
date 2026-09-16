@@ -153,7 +153,7 @@ export default function Index() {
     }
   }
   return <View onLayout={onRootLayout} style={styles.root}>
-    <ScrollView testID="screen-scroll" scrollEnabled={!compactLandscape} style={compactLandscape && styles.nonScrolling}
+    <ScrollView testID="screen-scroll"
       contentContainerStyle={[styles.scroll, compactLandscape && styles.compactScroll,
         { paddingHorizontal: narrow ? 22 : 88 * s, paddingTop: (compactLandscape ? 28 : 54) * s, paddingBottom: (compactLandscape ? 12 : 20) * s }]}>
       <View testID={`screen-${screen === 'session' && session?.paused ? 'paused' : screen === 'session' ? session?.phase : screen}`} style={styles.screenBody}>{body}</View>
@@ -170,7 +170,6 @@ const styles = StyleSheet.create({
   loading: { flex: 1, backgroundColor: palette.cream, justifyContent: 'center', alignItems: 'center' },
   scroll: { flexGrow: 1 },
   compactScroll: { height: '100%' },
-  nonScrolling: { overflow: 'hidden' },
   screenBody: { flex: 1 },
   columns: { flex: 1, flexDirection: 'row' },
   stacked: { flexDirection: 'column' },
