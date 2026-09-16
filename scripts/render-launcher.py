@@ -25,6 +25,14 @@ def kettlebell(draw, x, y, size):
 def sparkle(d,x,y,r):
     d.polygon([(x,y-r),(x+r*.28,y-r*.28),(x+r,y),(x+r*.28,y+r*.28),(x,y+r),(x-r*.28,y+r*.28),(x-r,y),(x-r*.28,y-r*.28)],fill=CREAM)
 
+def transparent_mark(path, size, kettlebell_box, sparkle_spec):
+    """Render a transparent mark with enough inset for platform image crops."""
+    image = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+    kettlebell(draw, *kettlebell_box)
+    sparkle(draw, *sparkle_spec)
+    image.save(path)
+
 # Draw at high resolution and downsample for clean edges.
 icon=Image.new('RGB',(1024,1024),PEACH)
 d=ImageDraw.Draw(icon)
@@ -33,13 +41,12 @@ kettlebell(d,212,200,600)
 sparkle(d,800,250,55)
 icon.save('assets/icon.png')
 
-# The native splash provides its own warm-ivory background. Keeping the mark
-# transparent avoids a visible square around it on phones and televisions.
-splash=Image.new('RGBA',(1024,1024),(0,0,0,0))
-d=ImageDraw.Draw(splash)
-kettlebell(d,212,200,600)
-sparkle(d,800,250,55)
-splash.save('assets/splash-icon.png')
+# The native splash provides its own warm-ivory background. Keep both marks
+# transparent and leave a generous safe inset around the sparkle so platform
+# splash masks cannot clip it. The tighter brand mark avoids shrinking the
+# actual artwork into a tiny, pixelated header image.
+transparent_mark('assets/splash-icon.png', 1024, (222, 210, 580), (755, 245, 46))
+transparent_mark('assets/brand-mark.png', 512, (42, 52, 410), (420, 98, 25))
 
 banner=Image.new('RGB',(1280,720),PEACH)
 d=ImageDraw.Draw(banner)

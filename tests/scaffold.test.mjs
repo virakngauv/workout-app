@@ -47,6 +47,11 @@ test('the native splash matches the first rendered screen', () => {
   assert.equal(splash.readUInt32BE(16), 1024);
   assert.equal(splash.readUInt32BE(20), 1024);
   assert.equal(splash[25], 6, 'splash mark must use RGBA transparency');
+  const brand = readFileSync('assets/brand-mark.png');
+  assert.equal(brand.subarray(1, 4).toString(), 'PNG');
+  assert.equal(brand.readUInt32BE(16), 512);
+  assert.equal(brand.readUInt32BE(20), 512);
+  assert.equal(brand[25], 6, 'header mark must use RGBA transparency');
 });
 
 test('TV/mobile scripts and APK profiles select their targets explicitly', () => {

@@ -25,6 +25,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
     "test": "node --test tests/*.test.mjs",
+    "test:e2e": "playwright test",
+    "web:e2e": "npm run export:web && node scripts/serve-e2e.mjs",
     "check": "npm run typecheck && npm run lint && npm test",
     "export:web": "cross-env EXPO_TV=0 expo export --platform web --output-dir dist/web",
     "export:android": "cross-env EXPO_TV=1 expo export --platform android --output-dir dist/android"
@@ -51,6 +53,7 @@
   },
   "devDependencies": {
     "@react-native-tvos/config-tv": "^0.1.6",
+    "@playwright/test": "^1.55.0",
     "@types/react": "~19.2.2",
     "cross-env": "10.1.0",
     "eslint": "^9.39.1",

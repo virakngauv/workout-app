@@ -25,7 +25,9 @@ export default function Index() {
   const { width, height } = useWindowDimensions();
   const narrow = width < 760;
   const phone = width < 520;
-  const s = narrow ? Math.max(0.64, Math.min(0.85, width / 650)) : Math.max(0.55, Math.min(width / 1600, height / 900));
+  const compactLandscape = !narrow && height <= 720;
+  const baseScale = narrow ? Math.max(0.64, Math.min(0.85, width / 650)) : Math.max(0.55, Math.min(width / 1600, height / 900));
+  const s = compactLandscape ? baseScale * 0.9 : baseScale;
   const [screen, setScreen] = useState<Screen>('home');
   const [week, setWeek] = useState(1);
   const [day, setDay] = useState(0);
@@ -77,7 +79,7 @@ export default function Index() {
     body = <View key="home" style={[styles.columns, narrow && styles.stacked, { gap: 48 * s }]}>
       <View style={[styles.homeCopy, narrow && { flex: undefined }, { gap: 16 * s }]}>
         <View style={[styles.brand, { gap: 12 * s }]}>
-          <Image accessibilityIgnoresInvertColors source={require('../../assets/splash-icon.png')} style={{ width: 58 * s, height: 58 * s }} />
+          <Image accessibilityIgnoresInvertColors source={require('../../assets/brand-mark.png')} resizeMode="contain" style={{ width: 64 * s, height: 64 * s }} />
           <Text style={heading(36)}>GetFit</Text>
         </View>
         <View style={[styles.badge, { paddingVertical: 10 * s, paddingHorizontal: 24 * s }]}><Text style={[text(24, true), { letterSpacing: 2 * s }]}>WEEK {week} · WORKOUT {workout}</Text></View>
@@ -151,13 +153,15 @@ export default function Index() {
     }
   }
   return <View onLayout={onRootLayout} style={styles.root}>
-    <ScrollView contentContainerStyle={[styles.scroll, { paddingHorizontal: narrow ? 22 : 88 * s, paddingTop: 54 * s, paddingBottom: 20 * s }]}>
-      {body}
-      <View style={[styles.footer, { marginTop: 28 * s, paddingTop: 18 * s, gap: 38 * s }]}>
+    <ScrollView testID="screen-scroll" scrollEnabled={!compactLandscape} style={compactLandscape && styles.nonScrolling}
+      contentContainerStyle={[styles.scroll, compactLandscape && styles.compactScroll,
+        { paddingHorizontal: narrow ? 22 : 88 * s, paddingTop: (compactLandscape ? 28 : 54) * s, paddingBottom: (compactLandscape ? 12 : 20) * s }]}>
+      <View testID={`screen-${screen === 'session' && session?.paused ? 'paused' : screen === 'session' ? session?.phase : screen}`} style={styles.screenBody}>{body}</View>
+      {!compactLandscape && <View style={[styles.footer, { marginTop: 28 * s, paddingTop: 18 * s, gap: 38 * s }]}>
         <View style={styles.legend}><Ionicons name="move-outline" size={27 * s} color={palette.muted} /><Text style={text(21)}>Arrows · Move</Text></View>
         <View style={styles.legend}><Ionicons name="radio-button-on-outline" size={27 * s} color={palette.muted} /><Text style={text(21)}>Select · Choose</Text></View>
         <View style={styles.legend}><Ionicons name="return-down-back-outline" size={27 * s} color={palette.muted} /><Text style={text(21)}>Back · {screen === 'session' ? (session?.phase === 'complete' ? 'Home' : 'Pause / resume') : 'Return'}</Text></View>
-      </View>
+      </View>}
     </ScrollView>
   </View>;
 }
@@ -165,6 +169,9 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.cream },
   loading: { flex: 1, backgroundColor: palette.cream, justifyContent: 'center', alignItems: 'center' },
   scroll: { flexGrow: 1 },
+  compactScroll: { height: '100%' },
+  nonScrolling: { overflow: 'hidden' },
+  screenBody: { flex: 1 },
   columns: { flex: 1, flexDirection: 'row' },
   stacked: { flexDirection: 'column' },
   homeCopy: { flex: 1, justifyContent: 'center' },

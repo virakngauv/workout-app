@@ -196,11 +196,19 @@ Every script sets `EXPO_TV` explicitly, so an inherited shell setting does not s
 
 ```sh
 npm run check                 # strict types, lint, scaffold tests
+npx playwright install chromium # one-time browser runtime for E2E checks
+npm run test:e2e              # major-screen vertical-fit checks
 npx expo install --check       # SDK dependency compatibility
 npm run export:web            # production web bundle
 npm run export:android        # production Android TV JS/assets bundle
 npm run prebuild:tv -- --no-install
 ```
+
+The Playwright suite traverses the home, plan, active exercise, paused, rest,
+and completion screens at 960×540, 1024×576, and 1280×720 logical landscape
+viewports. It fails when a major screen needs vertical scrolling or extends
+below the viewport. This guards responsive layout sizing; it does not replace
+native TV focus, remote-control, or overscan testing.
 
 GitHub Actions performs these checks and verifies generated TV/mobile Android manifests. Its actions are pinned to commit SHAs. The workflow is read-only and does not publish, deploy, build signed releases, or provision cloud services.
 
