@@ -18,7 +18,8 @@ export default function Index() {
   const baseScale = narrow ? Math.max(0.64, Math.min(0.85, width / 650)) : Math.max(0.55, Math.min(width / 1600, height / 900));
   const scale = compactLandscape ? baseScale * 0.9 : baseScale;
   const [screen, setScreen] = useState<Screen>('plan');
-  const [week, setWeek] = useState(1);
+  const currentWeek = 1;
+  const [week, setWeek] = useState(currentWeek);
   const [currentDay] = useState(() => getCurrentWeekdayIndex());
   const [day, setDay] = useState(() => getCurrentWeekdayIndex());
   const [energy, setEnergy] = useState<Energy>('Steady');
@@ -56,7 +57,7 @@ export default function Index() {
       ? 'paused'
       : session?.phase ?? 'session';
   const body = screen === 'plan'
-    ? <WeeklyPlanScreen week={week} day={day} currentDay={currentDay} energy={energy} scale={scale}
+    ? <WeeklyPlanScreen week={week} currentWeek={currentWeek} day={day} currentDay={currentDay} energy={energy} scale={scale}
         narrow={narrow} phone={phone} onWeekChange={setWeek} onDayChange={setDay}
         onEnergyChange={setEnergy} onStartWorkout={startWorkout} />
     : session

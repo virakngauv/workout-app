@@ -21,6 +21,7 @@ const energyIcons: Record<Energy, IconName> = {
 
 type Props = {
   week: number;
+  currentWeek: number;
   day: number;
   currentDay: number;
   energy: Energy;
@@ -35,6 +36,7 @@ type Props = {
 
 export function WeeklyPlanScreen({
   week,
+  currentWeek,
   day,
   currentDay,
   energy,
@@ -52,6 +54,7 @@ export function WeeklyPlanScreen({
   const core = selected.core ? workouts[selected.core] : null;
   const exercises = [...(workout?.exercises ?? []), ...(core?.exercises ?? [])];
   const sessionLabel = [workout?.title, core?.title].filter(Boolean).join(' + ');
+  const currentWeekdayLabel = week === currentWeek ? 'Today' : 'Current weekday';
   const text = (size: number, bold = false) => ({
     color: palette.ink,
     fontFamily: bold ? 'NunitoBold' : 'Nunito',
@@ -82,7 +85,7 @@ export function WeeklyPlanScreen({
 
     <View accessibilityLabel="Choose a day" style={[styles.days, narrow && styles.daysNarrow, { gap: 8 * scale }]}>
       {getWeek(week).map((entry, index) => <RemoteButton key={index}
-        label={`${weekdays[index]}${index === currentDay ? ' · Today' : ''}\n${entry.label}`}
+        label={`${weekdays[index]}${index === currentDay ? ` · ${currentWeekdayLabel}` : ''}\n${entry.label}`}
         selected={day === index} preferred={preferredDay === index} scale={scale * 0.72}
         onFocus={() => onDayChange(index)} onPress={() => onDayChange(index)} testID={`day-${index}`}
         style={[styles.day, narrow && styles.dayNarrow, { minHeight: 90 * scale }]} />)}
@@ -91,7 +94,9 @@ export function WeeklyPlanScreen({
     <View style={[styles.detail, narrow && styles.detailNarrow, { borderRadius: 28 * scale, padding: 24 * scale, gap: 24 * scale }]}>
       <View style={[styles.detailCopy, { gap: 10 * scale }]}>
         <View style={[styles.selectedBadge, { borderRadius: 20 * scale, paddingHorizontal: 14 * scale, paddingVertical: 6 * scale }]}>
-          <Text style={text(18, true)}>{weekdays[day]}{day === currentDay ? ' · TODAY' : ''}</Text>
+          <Text testID="selected-day-label" style={text(18, true)}>
+            {weekdays[day]}{day === currentDay ? ` · ${currentWeekdayLabel.toUpperCase()}` : ''}
+          </Text>
         </View>
         <Text accessibilityRole="header" style={heading(phone ? 42 : 48)}>{selected.label}</Text>
         <Text style={text(23)}>{selected.note ?? (workout

@@ -43,6 +43,10 @@ for (const viewport of landscapeViewports) {
     await weekTwo.click();
     await page.waitForTimeout(150);
     await expect(weekTwo).toBeFocused();
+    await expect(currentDayButton).toHaveAccessibleName(/Current weekday/);
+    await expect(currentDayButton).not.toHaveAccessibleName(/Today/);
+    await currentDayButton.click();
+    await expect(page.getByTestId('selected-day-label')).toContainText('CURRENT WEEKDAY');
     await page.getByTestId('day-3').click();
     await expect(page.getByTestId('core-plan')).toContainText('Core 1: Dead bug · Side plank');
     await expect(page.getByTestId('core-plan')).not.toContainText('Forearm plank');

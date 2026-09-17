@@ -112,6 +112,16 @@ npm run web
 
 A browser preview is not a TV focus/navigation test. Exercise the interface using D-pad directions, Select, and Back on an Android TV emulator and real device. The web preview also supports arrows, Enter, and Escape. Browser keyboard checks are not proof of native TV focus behavior.
 
+### Timer cue assets
+
+The timer's two short countdown cues and longer zero cue are generated deterministically with Python's standard library:
+
+```sh
+python3 scripts/render-timer-tones.py
+```
+
+This command writes `assets/audio/timer-short.wav` and `assets/audio/timer-long.wav`. Regenerate and commit both files after changing the tone script, then rebuild the native app so the bundled assets reach the device.
+
 ## Use a physical TV
 
 An APK needs an Android-compatible device. Confirm the actual operating system/model rather than assuming every Hisense TV runs Android. For this project, target a **Hisense running Google TV/Android TV**, or a **Chromecast with Google TV**. Do not assume a VIDAA/Roku television or a classic casting-only Chromecast can install this APK. Start with the emulator while hardware details are unconfirmed.
