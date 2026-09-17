@@ -52,13 +52,18 @@ export default function Index() {
   }, [dispatch, returnToPlan, screen, session]);
 
   useRemoteNavigation(onBack);
+  const sessionTimerMode = screen !== 'session' || session?.paused
+    ? null
+    : session?.phase === 'rest' && session.remaining > 0
+      ? 'rest'
+      : session?.phase === 'exercise' && session.exerciseTimerRunning
+        ? 'exercise'
+        : null;
   useEffect(() => {
-    const ticking = (session?.phase === 'rest' && session.remaining > 0)
-      || (session?.phase === 'exercise' && session.exerciseTimerRunning);
-    if (screen !== 'session' || !ticking || session.paused) return;
+    if (!sessionTimerMode) return;
     const timer = setInterval(() => dispatch({ type: 'tick' }), 1000);
     return () => clearInterval(timer);
-  }, [dispatch, screen, session?.exerciseTimerRunning, session?.paused, session?.phase, session?.remaining]);
+  }, [dispatch, sessionTimerMode]);
 
   const screenState = screen === 'plan'
     ? 'plan'
