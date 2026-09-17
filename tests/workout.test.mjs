@@ -87,6 +87,7 @@ test('rest timer freezes when paused, never goes negative, and never auto-starts
   for (let i = 0; i < 100; i++) state = sessionReducer(state, { type: 'tick' });
   assert.equal(state.remaining, 0);
   assert.equal(state.phase, 'rest');
+  assert.equal(sessionReducer(state, { type: 'tick' }), state);
   state = sessionReducer(state, { type: 'continue' });
   assert.equal(state.exercise, 1);
   assert.equal(state.set, 1);

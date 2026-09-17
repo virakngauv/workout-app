@@ -119,7 +119,10 @@ export function sessionReducer(state: Session, action: SessionAction): Session {
     return { ...state, exerciseTimerRemaining: target.durationSeconds, exerciseTimerRunning: false };
   }
   if (action.type === 'tick') {
-    if (state.phase === 'rest') return { ...state, remaining: Math.max(0, state.remaining - 1) };
+    if (state.phase === 'rest') {
+      if (state.remaining === 0) return state;
+      return { ...state, remaining: state.remaining - 1 };
+    }
     if (state.phase === 'exercise' && state.exerciseTimerRunning && state.exerciseTimerRemaining !== null) {
       const exerciseTimerRemaining = Math.max(0, state.exerciseTimerRemaining - 1);
       return { ...state, exerciseTimerRemaining, exerciseTimerRunning: exerciseTimerRemaining > 0 };

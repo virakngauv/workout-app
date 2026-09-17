@@ -24,14 +24,19 @@ async function expectScreenFits(page: Page, state: string) {
   expect(bounds!.y + bounds!.height, `${state} extends below the viewport`).toBeLessThanOrEqual(metrics.viewportHeight + 1);
 }
 
+async function getTodayButton(page: Page) {
+  const testID = await page.getByRole('button', { name: /· Today/ }).getAttribute('data-testid');
+  expect(testID, 'the rendered plan should identify today').not.toBeNull();
+  return page.getByTestId(testID!);
+}
+
 for (const viewport of landscapeViewports) {
   test(`major screens fit without vertical scrolling at ${viewport.name} (${viewport.width}x${viewport.height})`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
 
     await expectScreenFits(page, 'plan');
-    const currentDay = (new Date().getDay() + 6) % 7;
-    const currentDayButton = page.getByTestId(`day-${currentDay}`);
+    const currentDayButton = await getTodayButton(page);
     await expect(currentDayButton).toHaveAttribute('aria-pressed', 'true');
     await expect(currentDayButton).toBeFocused();
 
@@ -87,8 +92,7 @@ test('weekly plan and active workout remain usable on a phone-sized layout', asy
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await expect(page.getByTestId('screen-plan')).toBeVisible();
-  const currentDay = (new Date().getDay() + 6) % 7;
-  await expect(page.getByTestId(`day-${currentDay}`)).toBeFocused();
+  await expect(await getTodayButton(page)).toBeFocused();
 
   await page.getByTestId('day-0').click();
   await page.getByTestId('start-workout').focus();
@@ -103,8 +107,7 @@ test('weekly plan and active workout remain usable on a phone-sized layout', asy
 test('seconds-based exercises expose a user-controlled timer', async ({ page }) => {
   await page.setViewportSize({ width: 960, height: 540 });
   await page.goto('/');
-  const currentDay = (new Date().getDay() + 6) % 7;
-  await expect(page.getByTestId(`day-${currentDay}`)).toBeFocused();
+  await expect(await getTodayButton(page)).toBeFocused();
   await page.getByTestId('week-2').click();
   await page.getByTestId('day-3').click();
   const gentle = page.getByTestId('energy-gentle');
