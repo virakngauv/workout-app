@@ -1,8 +1,9 @@
-import { prescription, workouts, type Energy, type Exercise, type WorkoutId } from './plan';
+import { prescription, workouts, type CoreRounds, type Energy, type Exercise, type WorkoutId } from './plan';
 
 export type Session = {
   workout: WorkoutId;
   core?: WorkoutId;
+  coreRounds: CoreRounds;
   energy: Energy;
   exercise: number;
   set: number;
@@ -23,19 +24,23 @@ export type SessionAction =
   | { type: 'timer-reset' };
 export type SessionPosition = { exercise: number; set: number };
 
-export const startSession = (workout: WorkoutId, energy: Energy, core?: WorkoutId): Session => ({
-  workout,
-  core,
-  energy,
-  exercise: 0,
-  set: 1,
-  completedSets: 0,
-  phase: 'exercise',
-  remaining: 0,
-  paused: false,
-  exerciseTimerRemaining: prescription(workouts[workout].exercises[0]!, energy).durationSeconds,
-  exerciseTimerRunning: false,
-});
+export const startSession = (workout: WorkoutId, energy: Energy, core?: WorkoutId, coreRounds: CoreRounds = 1): Session => {
+  const session: Session = {
+    workout,
+    core,
+    coreRounds,
+    energy,
+    exercise: 0,
+    set: 1,
+    completedSets: 0,
+    phase: 'exercise',
+    remaining: 0,
+    paused: false,
+    exerciseTimerRemaining: null,
+    exerciseTimerRunning: false,
+  };
+  return { ...session, exerciseTimerRemaining: getSessionPrescription(session, 0).durationSeconds };
+};
 
 export function getSessionExercises(session: Pick<Session, 'workout' | 'core'>): Exercise[] {
   return [session.workout, session.core]
@@ -47,13 +52,20 @@ export function getSessionTitle(session: Pick<Session, 'workout' | 'core'>) {
   return [workouts[session.workout].title, session.core ? workouts[session.core].title : null].filter(Boolean).join(' + ');
 }
 
+export function getSessionPrescription(session: Pick<Session, 'workout' | 'core' | 'coreRounds' | 'energy'>, exerciseIndex: number) {
+  const exercises = getSessionExercises(session);
+  const workoutIsCore = session.workout === 'Core1' || session.workout === 'Core2';
+  const belongsToCore = workoutIsCore || Boolean(session.core && exerciseIndex >= workouts[session.workout].exercises.length);
+  return prescription(exercises[exerciseIndex]!, session.energy, belongsToCore ? session.coreRounds : undefined);
+}
+
 export function getNextSessionPosition(session: Session): SessionPosition | null {
   const exercises = getSessionExercises(session);
   for (let exercise = session.exercise + 1; exercise < exercises.length; exercise += 1) {
-    if (prescription(exercises[exercise]!, session.energy).sets >= session.set) return { exercise, set: session.set };
+    if (getSessionPrescription(session, exercise).sets >= session.set) return { exercise, set: session.set };
   }
   const nextSet = session.set + 1;
-  const exercise = exercises.findIndex(item => prescription(item, session.energy).sets >= nextSet);
+  const exercise = exercises.findIndex((_, index) => getSessionPrescription(session, index).sets >= nextSet);
   return exercise === -1 ? null : { exercise, set: nextSet };
 }
 
@@ -69,13 +81,14 @@ export type SessionProgress = {
   exerciseStatuses: ExerciseStatus[];
 };
 
-export function totalPrescribedSets(workout: WorkoutId, energy: Energy, core?: WorkoutId) {
-  return getSessionExercises({ workout, core }).reduce((total, item) => total + prescription(item, energy).sets, 0);
+export function totalPrescribedSets(workout: WorkoutId, energy: Energy, core?: WorkoutId, coreRounds: CoreRounds = 1) {
+  const session = { workout, core, coreRounds, energy };
+  return getSessionExercises(session).reduce((total, _, index) => total + getSessionPrescription(session, index).sets, 0);
 }
 
 export function getSessionProgress(session: Session): SessionProgress {
   const exercises = getSessionExercises(session);
-  const totalSets = totalPrescribedSets(session.workout, session.energy, session.core);
+  const totalSets = totalPrescribedSets(session.workout, session.energy, session.core, session.coreRounds);
   const completedSets = Math.min(session.completedSets, totalSets);
   const percent = totalSets === 0 ? 100 : Math.round(completedSets / totalSets * 100);
   const workout = workouts[session.workout];
@@ -87,14 +100,14 @@ export function getSessionProgress(session: Session): SessionProgress {
   const nextPosition = session.phase === 'rest' ? getNextSessionPosition(session) : null;
   const activeExercise = session.phase === 'complete' ? exercises.length - 1 : nextPosition?.exercise ?? session.exercise;
   const activeSet = session.phase === 'complete' ? session.set : nextPosition?.set ?? session.set;
-  const exerciseStatuses = exercises.map((item, index): ExerciseStatus => {
+  const exerciseStatuses = exercises.map((_, index): ExerciseStatus => {
     if (session.phase === 'complete') return 'completed';
-    const prescribedSets = prescription(item, session.energy).sets;
+    const prescribedSets = getSessionPrescription(session, index).sets;
     if (prescribedSets < activeSet || (prescribedSets === activeSet && index < activeExercise)) return 'completed';
     if (index === activeExercise) return 'current';
     return 'upcoming';
   });
-  const currentDose = prescription(exercises[session.exercise]!, session.energy);
+  const currentDose = getSessionPrescription(session, session.exercise);
   const sectionLabel = session.phase === 'complete'
     ? 'Workout complete'
     : session.phase === 'rest'
@@ -107,9 +120,7 @@ export function sessionReducer(state: Session, action: SessionAction): Session {
   if (action.type === 'pause') return state.phase === 'complete' ? state : { ...state, paused: true };
   if (action.type === 'resume') return { ...state, paused: false };
   if (state.paused || state.phase === 'complete') return state;
-  const exercises = getSessionExercises(state);
-  const item = exercises[state.exercise]!;
-  const target = prescription(item, state.energy);
+  const target = getSessionPrescription(state, state.exercise);
   if (action.type === 'timer-toggle' && state.phase === 'exercise' && target.durationSeconds) {
     return state.exerciseTimerRemaining === 0
       ? { ...state, exerciseTimerRemaining: target.durationSeconds, exerciseTimerRunning: true }
@@ -142,7 +153,7 @@ export function sessionReducer(state: Session, action: SessionAction): Session {
   if (action.type === 'continue' && state.phase === 'rest') {
     const next = getNextSessionPosition(state);
     if (!next) return { ...state, phase: 'complete', remaining: 0, exerciseTimerRunning: false };
-    const nextTimer = prescription(exercises[next.exercise]!, state.energy).durationSeconds;
+    const nextTimer = getSessionPrescription(state, next.exercise).durationSeconds;
     return {
       ...state,
       ...next,

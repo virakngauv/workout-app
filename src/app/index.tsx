@@ -3,26 +3,30 @@ import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { palette } from '../components/RemoteButton';
 import { ActiveWorkoutScreen } from '../screens/ActiveWorkoutScreen';
+import { PlanGuidanceScreen } from '../screens/PlanGuidanceScreen';
 import { WeeklyPlanScreen } from '../screens/WeeklyPlanScreen';
-import { getCurrentWeekdayIndex, type Energy, type WorkoutId } from '../workout/plan';
+import { getCurrentWeekdayIndex, type CoreRounds, type Energy, type WorkoutId } from '../workout/plan';
 import { sessionReducer, startSession, type Session, type SessionAction } from '../workout/session';
 import { useRemoteNavigation } from '../workout/useRemoteNavigation';
 
-type Screen = 'plan' | 'session';
+type Screen = 'plan' | 'guidance' | 'session';
 
 export default function Index() {
   const { width, height } = useWindowDimensions();
   const narrow = width < 760;
   const phone = width < 520;
   const compactLandscape = !narrow && height <= 720;
-  const baseScale = narrow ? Math.max(0.64, Math.min(0.85, width / 650)) : Math.max(0.55, Math.min(width / 1600, height / 900));
+  const baseScale = narrow
+    ? Math.max(0.64, Math.min(0.85, width / 650))
+    : Math.max(0.55, Math.min(1, width / 1600, height / 900));
   const scale = compactLandscape ? baseScale * 0.9 : baseScale;
   const [screen, setScreen] = useState<Screen>('plan');
-  const currentWeek = 1;
+  const [currentWeek, setCurrentWeek] = useState(1);
   const [week, setWeek] = useState(currentWeek);
   const [currentDay] = useState(() => getCurrentWeekdayIndex());
   const [day, setDay] = useState(() => getCurrentWeekdayIndex());
   const [energy, setEnergy] = useState<Energy>('Steady');
+  const [coreRounds, setCoreRounds] = useState<CoreRounds>(1);
   const [session, setSession] = useState<Session | null>(null);
 
   const dispatch = useCallback((action: SessionAction) => {
@@ -33,10 +37,14 @@ export default function Index() {
     setScreen('plan');
   }, []);
   const startWorkout = useCallback((workout: WorkoutId, core?: WorkoutId) => {
-    setSession(startSession(workout, energy, core));
+    setSession(startSession(workout, energy, core, coreRounds));
     setScreen('session');
-  }, [energy]);
+  }, [coreRounds, energy]);
   const onBack = useCallback(() => {
+    if (screen === 'guidance') {
+      setScreen('plan');
+      return true;
+    }
     if (screen !== 'session' || !session) return false;
     if (session.phase === 'complete') returnToPlan();
     else dispatch({ type: session.paused ? 'resume' : 'pause' });
@@ -45,25 +53,31 @@ export default function Index() {
 
   useRemoteNavigation(onBack);
   useEffect(() => {
-    const ticking = session?.phase === 'rest' || (session?.phase === 'exercise' && session.exerciseTimerRunning);
+    const ticking = (session?.phase === 'rest' && session.remaining > 0)
+      || (session?.phase === 'exercise' && session.exerciseTimerRunning);
     if (screen !== 'session' || !ticking || session.paused) return;
     const timer = setInterval(() => dispatch({ type: 'tick' }), 1000);
     return () => clearInterval(timer);
-  }, [dispatch, screen, session?.exerciseTimerRunning, session?.paused, session?.phase]);
+  }, [dispatch, screen, session?.exerciseTimerRunning, session?.paused, session?.phase, session?.remaining]);
 
   const screenState = screen === 'plan'
     ? 'plan'
-    : session?.paused
-      ? 'paused'
-      : session?.phase ?? 'session';
+    : screen === 'guidance'
+      ? 'guidance'
+      : session?.paused
+        ? 'paused'
+        : session?.phase ?? 'session';
   const body = screen === 'plan'
-    ? <WeeklyPlanScreen week={week} currentWeek={currentWeek} day={day} currentDay={currentDay} energy={energy} scale={scale}
-        narrow={narrow} phone={phone} onWeekChange={setWeek} onDayChange={setDay}
-        onEnergyChange={setEnergy} onStartWorkout={startWorkout} />
-    : session
-      ? <ActiveWorkoutScreen session={session} scale={scale} narrow={narrow} compactLandscape={compactLandscape}
-          dispatch={dispatch} onReturnToPlan={returnToPlan} />
-      : null;
+    ? <WeeklyPlanScreen week={week} currentWeek={currentWeek} day={day} currentDay={currentDay} energy={energy}
+        coreRounds={coreRounds} scale={scale} narrow={narrow} phone={phone} onWeekChange={setWeek}
+        onSetCurrentWeek={setCurrentWeek} onDayChange={setDay} onEnergyChange={setEnergy}
+        onCoreRoundsChange={setCoreRounds} onOpenGuidance={() => setScreen('guidance')} onStartWorkout={startWorkout} />
+    : screen === 'guidance'
+      ? <PlanGuidanceScreen scale={scale} narrow={narrow} onReturnToPlan={() => setScreen('plan')} />
+      : session
+        ? <ActiveWorkoutScreen session={session} scale={scale} narrow={narrow} compactLandscape={compactLandscape}
+            dispatch={dispatch} onReturnToPlan={returnToPlan} />
+        : null;
 
   const footerText = (size: number) => ({ fontFamily: 'Nunito', fontSize: size * scale, color: palette.ink });
   return <View style={styles.root}>
@@ -74,7 +88,7 @@ export default function Index() {
         <View style={styles.legend}><Ionicons name="move-outline" size={25 * scale} color={palette.muted} /><Text style={footerText(19)}>Arrows · Move</Text></View>
         <View style={styles.legend}><Ionicons name="radio-button-on-outline" size={25 * scale} color={palette.muted} /><Text style={footerText(19)}>Select · Choose</Text></View>
         <View style={styles.legend}><Ionicons name="return-down-back-outline" size={25 * scale} color={palette.muted} />
-          <Text style={footerText(19)}>Back · {screen === 'session' ? (session?.phase === 'complete' ? 'Plan' : 'Pause / resume') : 'Exit'}</Text></View>
+          <Text style={footerText(19)}>Back · {screen === 'session' ? (session?.phase === 'complete' ? 'Plan' : 'Pause / resume') : screen === 'guidance' ? 'Plan' : 'Exit'}</Text></View>
       </View>}
     </ScrollView>
   </View>;

@@ -10,8 +10,9 @@ export type Exercise = {
   unit?: 'side' | 'leg' | 'seconds' | 'seconds/side';
   load: string;
   cues: string[];
+  progressionMax?: number;
 };
-const exercise = (id: string, name: string, sets: number, min: number, max: number, load: string, cues: string[], unit?: Exercise['unit']): Exercise => ({ id, name, sets, min, max, load, cues, unit });
+const exercise = (id: string, name: string, sets: number, min: number, max: number, load: string, cues: string[], unit?: Exercise['unit'], progressionMax?: number): Exercise => ({ id, name, sets, min, max, load, cues, unit, progressionMax });
 const squat = ['Chest up', 'Knees track over toes', 'Drive through heels'];
 const hinge = ['Hinge at hips', 'Back flat', 'Feel hamstrings'];
 const row = ['Back flat', 'Pull elbow back', 'Keep neck neutral'];
@@ -50,31 +51,46 @@ export const workouts: Record<WorkoutId, Workout> = {
   ] },
   Core1: { title: 'Core 1', duration: '1–2 rounds', note: 'Build the side plank toward 30 sec.', exercises: [
     exercise('dead-bug', 'Dead bug', 2, 6, 8, 'Bodyweight', ['Lower back stays down', 'Move slowly', 'Reach opposite arm and leg'], 'side'),
-    exercise('side-plank', 'Side plank', 2, 15, 20, 'Bodyweight', ['Lift hips', 'Body in a line', 'Keep neck neutral'], 'seconds/side'),
+    exercise('side-plank', 'Side plank', 2, 15, 20, 'Bodyweight', ['Lift hips', 'Body in a line', 'Keep neck neutral'], 'seconds/side', 30),
   ] },
-  Core2: { title: 'Core 2', duration: '1–2 rounds', note: 'Introduce during Week 4 only when the movements and recovery feel comfortable. Use 15 lb or 8 kg KB only if you can stay upright without leaning.', exercises: [
+  Core2: { title: 'Core 2', duration: '1–2 rounds', note: 'Add once Week 4 feels comfortable. Use 15 lb or 8 kg KB only if you can stay upright without leaning.', exercises: [
     exercise('plank', 'Forearm plank', 2, 20, 40, 'Bodyweight', ['Brace core', 'Hips level', 'Do not sag'], 'seconds'),
-    exercise('suitcase-carry', 'Suitcase carry', 2, 30, 45, 'Bodyweight; 15 lb or 8 kg KB when steady', ['Stand tall', 'Do not lean', 'Slow, steady steps'], 'seconds/side'),
+    exercise('suitcase-carry', 'Suitcase carry', 2, 30, 45, '15 lb or 8 kg KB only if you can stay upright without leaning', ['Stand tall', 'Do not lean', 'Slow, steady steps'], 'seconds/side'),
   ] },
 };
 export const energies: Energy[] = ['Gentle', 'Steady', 'Energized'];
+export const recoverySeconds = 45;
 export const energyDetails: Record<Energy, string> = {
-  Gentle: 'One fewer set · lower rep target · 45 sec rest',
-  Steady: 'As written · 2 sets per exercise · 45 sec rest',
-  Energized: 'Upper rep target · same sets & weight · 45 sec rest',
+  Gentle: 'Lower rep/time target · 2 strength sets · 45 sec recovery',
+  Steady: 'As-written range · 2 strength sets · 45 sec recovery',
+  Energized: 'Upper or progression target · 2 strength sets · 45 sec recovery',
 };
-export function prescription(item: Exercise, energy: Energy) {
-  const sets = energy === 'Gentle' ? Math.max(1, item.sets - 1) : item.sets;
-  const targetAmount = energy === 'Energized' ? item.max : item.min;
+export function prescription(item: Exercise, energy: Energy, sets = item.sets) {
+  const targetAmount = energy === 'Energized' ? item.progressionMax ?? item.max : item.min;
   const amount = energy === 'Steady' && item.min !== item.max ? `${item.min}–${item.max}` : String(targetAmount);
   const unit = item.unit === 'seconds' ? 'sec' : item.unit === 'seconds/side' ? 'sec / side' : item.unit ? `reps / ${item.unit}` : 'reps';
   const durationSeconds = item.unit === 'seconds' || item.unit === 'seconds/side' ? targetAmount : null;
-  return { sets, target: `${amount} ${unit}`, rest: 45, durationSeconds };
+  return { sets, target: `${amount} ${unit}`, rest: recoverySeconds, durationSeconds };
 }
 export type PlanDay = { label: string; workout?: WorkoutId; core?: WorkoutId; note?: string };
+export type CoreRounds = 1 | 2;
 export const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 export const getCurrentWeekdayIndex = (date = new Date()) => (date.getDay() + 6) % 7;
-const cardioNote = 'Dancing, incline or brisk walking, or easy jog/walk intervals. Moderate pace: breathing faster, but you can still talk.';
+export const cardioOptions = [
+  'Dance: 20–30 min; keep moving. Moderate effort means you can talk, but singing would be difficult.',
+  'Incline walk: 20–30 min at incline 10–11, speed 2.8. If too hard, use incline 8–10 or speed 2.6–2.8.',
+  'Jog/walk: 20–25 min; 3 min jog at 5.0 + 2 min walk at 3.0, repeated 4–5 rounds. Easier: 2 min jog + 2 min walk.',
+  'Easy/recovery walk: 20–30 min comfortable pace. You do not need to run continuously.',
+];
+export const planGuidance = {
+  intro: 'Week 1 reflects what you are doing now. Progress only when the prior week feels manageable and you feel fully recovered.',
+  progress: 'Do not make up missed exercise. Move to the next week only if energy and recovery are good; repeating a week is fine. Keep most strength work at 2 sets. Add reps before weight.',
+  goals: 'For your goals: keep arm/thigh volume moderate; cardio and everyday movement support overall fat loss, while strength helps preserve/build muscle. Core work strengthens the trunk but does not selectively burn belly fat.',
+  metrics: 'Use actual active minutes and how the effort feels rather than chasing a proprietary cardio-load score.',
+  safety: 'Pause progression for unusual fatigue, dizziness, chest symptoms, or disproportionate shortness of breath.',
+};
+const cardioDay = (duration: string) => `${duration} · Choose one option from Plan guidance.`;
+const easyWalk = cardioOptions[3];
 export const weekGoals: string[] = [
   'Finish the return week. No need to add core yet.',
   'Add Workout B + one short core session.',
@@ -86,56 +102,56 @@ export const weekGoals: string[] = [
 export const weeks: PlanDay[][] = [
   [
     { label: 'Workout A', workout: 'A' },
-    { label: 'Dance', note: '20 min · ' + cardioNote },
-    { label: 'Rest / easy walk' },
+    { label: 'Dance', note: '20 min · Keep moving. Moderate effort means you can talk, but singing would be difficult.' },
+    { label: 'Rest / easy walk', note: easyWalk },
     { label: 'Workout A', workout: 'A' },
-    { label: 'Dance', note: '20 min · ' + cardioNote },
+    { label: 'Dance', note: '20 min · Keep moving. Moderate effort means you can talk, but singing would be difficult.' },
     { label: 'Optional easy walk / Pilates' },
     { label: 'Rest' },
   ],
   [
     { label: 'Workout A', workout: 'A' },
-    { label: 'Dance / cardio', note: '20–25 min · ' + cardioNote },
-    { label: 'Rest / easy walk' },
+    { label: 'Cardio option', note: cardioDay('20–25 min') },
+    { label: 'Rest / easy walk', note: easyWalk },
     { label: 'Workout B + Core 1', workout: 'B', core: 'Core1' },
     { label: 'Rest / easy Pilates' },
-    { label: 'Dance / cardio', note: '20–25 min · ' + cardioNote },
+    { label: 'Cardio option', note: cardioDay('20–25 min') },
     { label: 'Rest' },
   ],
   [
     { label: 'Workout A + Core 1', workout: 'A', core: 'Core1' },
-    { label: 'Cardio', note: '25–30 min · ' + cardioNote },
+    { label: 'Cardio option', note: cardioDay('25–30 min') },
     { label: 'Workout B', workout: 'B' },
     { label: 'Easy walk / Pilates', note: '20–30 min' },
-    { label: 'Cardio', note: '25–30 min · ' + cardioNote },
-    { label: 'Optional Workout C or easy walk', workout: 'C', note: 'C is optional, not required. Skip it if an easy walk sounds better.' },
+    { label: 'Cardio option', note: cardioDay('25–30 min') },
+    { label: 'Optional Workout C or easy walk', workout: 'C', note: 'C is optional, not required. Or take an easy/recovery walk for 20–30 min at a comfortable pace.' },
     { label: 'Rest' },
   ],
   [
     { label: 'Workout A + Core 1', workout: 'A', core: 'Core1' },
-    { label: 'Cardio', note: '30 min · ' + cardioNote },
+    { label: 'Cardio option', note: cardioDay('30 min') },
     { label: 'Workout B', workout: 'B' },
     { label: 'Brisk walk / Pilates', note: '25–30 min' },
-    { label: 'Cardio', note: '30 min · ' + cardioNote },
+    { label: 'Cardio option', note: cardioDay('30 min') },
     { label: 'Workout C + Core 2', workout: 'C', core: 'Core2', note: 'Only if recovery is good.' },
     { label: 'Rest' },
   ],
   [
     { label: 'Workout A + Core 1', workout: 'A', core: 'Core1' },
-    { label: 'Cardio', note: '30–35 min · ' + cardioNote },
+    { label: 'Cardio option', note: cardioDay('30–35 min') },
     { label: 'Workout B', workout: 'B' },
     { label: 'Brisk walk / Pilates', note: '30 min' },
-    { label: 'Cardio', note: '30–35 min · ' + cardioNote },
-    { label: 'Workout C + Core 2', workout: 'C', core: 'Core2', note: 'Or cardio 30 min — both count.' },
+    { label: 'Cardio option', note: cardioDay('30–35 min') },
+    { label: 'Workout C + Core 2', workout: 'C', core: 'Core2', note: 'Or cardio 30 min.' },
     { label: 'Rest' },
   ],
   [
     { label: 'Workout A + Core 1', workout: 'A', core: 'Core1' },
-    { label: 'Cardio', note: '30–40 min · ' + cardioNote },
+    { label: 'Cardio option', note: cardioDay('30–40 min') },
     { label: 'Workout B', workout: 'B' },
     { label: 'Brisk walk / Pilates', note: '30 min' },
-    { label: 'Cardio', note: '30–40 min · ' + cardioNote },
-    { label: 'Optional Workout C + Core 2', workout: 'C', core: 'Core2', note: 'Or dance/walk 30–40 min.' },
+    { label: 'Cardio option', note: cardioDay('30–40 min') },
+    { label: 'Optional Workout C + Core 2', workout: 'C', core: 'Core2', note: 'Or cardio 30–40 min.' },
     { label: 'Rest' },
   ],
 ];

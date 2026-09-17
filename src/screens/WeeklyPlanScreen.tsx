@@ -9,6 +9,7 @@ import {
   weekGoals,
   weekdays,
   workouts,
+  type CoreRounds,
   type Energy,
   type WorkoutId,
 } from '../workout/plan';
@@ -25,12 +26,16 @@ type Props = {
   day: number;
   currentDay: number;
   energy: Energy;
+  coreRounds: CoreRounds;
   scale: number;
   narrow: boolean;
   phone: boolean;
   onWeekChange: (week: number) => void;
+  onSetCurrentWeek: (week: number) => void;
   onDayChange: (day: number) => void;
   onEnergyChange: (energy: Energy) => void;
+  onCoreRoundsChange: (rounds: CoreRounds) => void;
+  onOpenGuidance: () => void;
   onStartWorkout: (workout: WorkoutId, core?: WorkoutId) => void;
 };
 
@@ -40,12 +45,16 @@ export function WeeklyPlanScreen({
   day,
   currentDay,
   energy,
+  coreRounds,
   scale,
   narrow,
   phone,
   onWeekChange,
+  onSetCurrentWeek,
   onDayChange,
   onEnergyChange,
+  onCoreRoundsChange,
+  onOpenGuidance,
   onStartWorkout,
 }: Props) {
   const [preferredDay] = useState(() => day);
@@ -77,9 +86,16 @@ export function WeeklyPlanScreen({
           <Text accessibilityRole="header" style={heading(phone ? 48 : 58)}>Weekly Plan</Text>
         </View>
       </View>
-      <View accessibilityLabel="Choose plan week" style={[styles.weekSelector, { gap: 8 * scale }]}>
-        {[1, 2, 3, 4, 5, 6].map(value => <RemoteButton key={value} label={value === 6 ? 'Week 6+' : `Week ${value}`} selected={week === value}
-          scale={scale * 0.68} onPress={() => onWeekChange(value)} testID={`week-${value}`} />)}
+      <View style={[styles.weekControls, { gap: 8 * scale }]}>
+        <View accessibilityLabel="Choose plan week" style={[styles.weekSelector, { gap: 8 * scale }]}>
+          {[1, 2, 3, 4, 5, 6].map(value => <RemoteButton key={value} label={value === 6 ? 'Week 6+' : `Week ${value}`} selected={week === value}
+            scale={scale * 0.68} onPress={() => onWeekChange(value)} testID={`week-${value}`} />)}
+        </View>
+        <View style={[styles.currentWeekRow, { gap: 10 * scale }]}>
+          <Text style={[text(15, true), { color: palette.muted }]}>Current plan week: {currentWeek === 6 ? '6+' : currentWeek}</Text>
+          {week !== currentWeek && <RemoteButton label={`Make Week ${week === 6 ? '6+' : week} current`} scale={scale * 0.5}
+            onPress={() => onSetCurrentWeek(week)} testID="set-current-week" />}
+        </View>
       </View>
     </View>
 
@@ -108,6 +124,7 @@ export function WeeklyPlanScreen({
               {core && <Text testID="core-plan" style={[text(19), styles.exerciseList]}>
                 {core.title}: {core.exercises.map(item => item.name).join(' · ')}
               </Text>}
+              {core?.note && <Text testID="core-note" style={[text(17), { color: palette.muted }]}>{core.note}</Text>}
             </View>
           : <View testID="rest-day-state" style={[styles.restState, { gap: 12 * scale, marginTop: 8 * scale }]}>
               <Ionicons name="leaf-outline" size={34 * scale} color={palette.muted} />
@@ -124,13 +141,24 @@ export function WeeklyPlanScreen({
             onPress={() => onEnergyChange(value)} testID={`energy-${value.toLowerCase()}`} style={styles.energyOption} />)}
         </View>
         <Text accessibilityLiveRegion="polite" style={[text(18), { color: palette.muted }]}>{energyDetails[energy]}</Text>
+        {core && <>
+          <Text style={text(19, true)}>Core rounds</Text>
+          <View accessibilityLabel="Core rounds" style={[styles.coreRounds, { borderRadius: 24 * scale, padding: 3 * scale }]}>
+            {([1, 2] as CoreRounds[]).map(value => <RemoteButton key={value} label={`${value}`} selected={coreRounds === value}
+              scale={scale * 0.58} onFocus={() => onCoreRoundsChange(value)} onPress={() => onCoreRoundsChange(value)}
+              testID={`core-rounds-${value}`} style={styles.energyOption} />)}
+          </View>
+        </>}
         <RemoteButton label={`Start ${sessionLabel}`} icon="play" primary scale={scale * 0.82}
           onPress={() => onStartWorkout(selected.workout!, selected.core)} testID="start-workout" style={{ marginTop: 4 * scale }} />
       </View>}
     </View>
 
-    <Text style={[text(18), { color: palette.muted }]}>Goal · {weekGoals[week - 1]}</Text>
-    <Text style={[text(18), { color: palette.muted }]}>Planning mode · Pick a day, review the workout, then start when you are ready.</Text>
+    <View style={[styles.guidanceRow, narrow && styles.guidanceRowNarrow, { gap: 14 * scale }]}>
+      <Text style={[text(18), { color: palette.muted, flex: 1 }]}>Goal · {weekGoals[week - 1]}</Text>
+      <RemoteButton label="Plan guidance + safety" icon="information-circle-outline" scale={scale * 0.58}
+        onPress={onOpenGuidance} testID="open-plan-guidance" />
+    </View>
   </View>;
 }
 
@@ -140,6 +168,8 @@ const styles = StyleSheet.create({
   headerNarrow: { alignItems: 'stretch', flexDirection: 'column', gap: 12 },
   brand: { flexDirection: 'row', alignItems: 'center' },
   weekSelector: { flexDirection: 'row', flexWrap: 'wrap' },
+  weekControls: { alignItems: 'flex-end' },
+  currentWeekRow: { alignItems: 'center', flexDirection: 'row' },
   days: { flexDirection: 'row' },
   daysNarrow: { flexWrap: 'wrap' },
   day: { flex: 1, paddingHorizontal: 6 },
@@ -153,6 +183,9 @@ const styles = StyleSheet.create({
   actions: { flex: 1, justifyContent: 'center' },
   actionsNarrow: { flex: undefined },
   energy: { flexDirection: 'row', backgroundColor: '#FFF6EE', borderColor: palette.border, borderWidth: 2 },
+  coreRounds: { flexDirection: 'row', backgroundColor: '#FFF6EE', borderColor: palette.border, borderWidth: 2 },
   energyPhone: { flexDirection: 'column' },
   energyOption: { flex: 1, paddingHorizontal: 4, borderColor: 'transparent', backgroundColor: 'transparent' },
+  guidanceRow: { alignItems: 'center', flexDirection: 'row' },
+  guidanceRowNarrow: { alignItems: 'stretch', flexDirection: 'column' },
 });

@@ -4,10 +4,10 @@ import { useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, type DimensionValue } from 'react-native';
 import { RemoteButton, palette } from '../components/RemoteButton';
 import { ExerciseArt } from '../workout/ExerciseArt';
-import { prescription } from '../workout/plan';
 import {
   getNextSessionPosition,
   getSessionExercises,
+  getSessionPrescription,
   getSessionProgress,
   getSessionTitle,
   type Session,
@@ -35,7 +35,7 @@ export function ActiveWorkoutScreen({ session, scale, narrow, compactLandscape, 
   const exercises = getSessionExercises(session);
   const sessionTitle = getSessionTitle(session);
   const item = exercises[session.exercise]!;
-  const dose = prescription(item, session.energy);
+  const dose = getSessionPrescription(session, session.exercise);
   const shortBeep = useAudioPlayer(require('../../assets/audio/timer-short.wav'));
   const longBeep = useAudioPlayer(require('../../assets/audio/timer-long.wav'));
   const previousTimer = useRef({ exercise: session.exercise, set: session.set, remaining: session.exerciseTimerRemaining });
@@ -135,9 +135,10 @@ export function ActiveWorkoutScreen({ session, scale, narrow, compactLandscape, 
         </View>
         <Text testID="current-exercise-name" accessibilityRole="header" style={heading(resting ? 58 : 55)}>{resting ? 'A little breather.' : item.name}</Text>
         {resting ? <>
-          <Text style={[heading(82), { fontVariant: ['tabular-nums'] }]}>{Math.floor(session.remaining / 60)}:{String(session.remaining % 60).padStart(2, '0')}</Text>
+          <Text testID="recovery-countdown" accessibilityLiveRegion="polite"
+            style={[heading(82), { fontVariant: ['tabular-nums'] }]}>{Math.floor(session.remaining / 60)}:{String(session.remaining % 60).padStart(2, '0')}</Text>
           <Text style={text(22)}>{session.remaining ? 'Rest, then continue when you are ready.' : 'Ready whenever you are.'}</Text>
-          <Text testID="next-exercise-summary" style={text(21, true)}>Next: {nextItem?.name}{nextPosition ? ` · Set ${nextPosition.set} of ${prescription(nextItem!, session.energy).sets}` : ''}</Text>
+          <Text testID="next-exercise-summary" style={text(21, true)}>Next: {nextItem?.name}{nextPosition ? ` · Set ${nextPosition.set} of ${getSessionPrescription(session, nextPosition.exercise).sets}` : ''}</Text>
         </> : <>
           <Text style={heading(52)}>{dose.target}</Text>
           <Text style={text(25, true)}>{progress.sectionLabel} · {item.load}</Text>
