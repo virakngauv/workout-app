@@ -1,6 +1,4 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useFonts } from 'expo-font';
-import * as SplashScreen from 'expo-splash-screen';
 import { useCallback, useEffect, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { RemoteButton, palette, type IconName } from '../components/RemoteButton';
@@ -12,16 +10,7 @@ import { useRemoteNavigation } from '../workout/useRemoteNavigation';
 const energyIcons: Record<Energy, IconName> = { Gentle: 'leaf-outline', Steady: 'sunny-outline', Energized: 'flash-outline' };
 type Screen = 'home' | 'plan' | 'session';
 
-SplashScreen.setOptions({ duration: 350, fade: true });
-void SplashScreen.preventAutoHideAsync().catch(() => undefined);
-
 export default function Index() {
-  const [fontsLoaded, fontError] = useFonts({
-    Baloo: require('../../assets/fonts/Baloo2-ExtraBold.ttf'),
-    Nunito: require('../../assets/fonts/Nunito-SemiBold.ttf'),
-    NunitoBold: require('../../assets/fonts/Nunito-ExtraBold.ttf'),
-    ...Ionicons.font,
-  });
   const { width, height } = useWindowDimensions();
   const narrow = width < 760;
   const phone = width < 520;
@@ -35,10 +24,6 @@ export default function Index() {
   const [energy, setEnergy] = useState<Energy>('Steady');
   const [session, setSession] = useState<Session | null>(null);
   const [homeFocus, setHomeFocus] = useState<'start' | 'plan'>('start');
-  const appReady = fontsLoaded || Boolean(fontError);
-  const onRootLayout = useCallback(() => {
-    if (appReady) void SplashScreen.hideAsync();
-  }, [appReady]);
   const dispatch = useCallback((action: SessionAction) => setSession(current => current ? sessionReducer(current, action) : null), []);
   const goHome = useCallback((focus: 'start' | 'plan' = 'start') => { setHomeFocus(focus); setScreen('home'); }, []);
   const onBack = useCallback(() => {
@@ -60,9 +45,6 @@ export default function Index() {
   const text = (size: number, bold = false) => ({ fontFamily: bold ? 'NunitoBold' : 'Nunito', fontSize: size * s, color: palette.ink });
   const heading = (size: number) => ({ fontFamily: 'Baloo', fontSize: size * s, lineHeight: size * s * 1.05, color: palette.ink });
   const begin = () => { setSession(startSession(workout, energy)); setScreen('session'); };
-  if (!appReady) return null;
-  if (fontError) return <View onLayout={onRootLayout} style={styles.loading}><Text>Unable to load the bundled fonts. Please reopen the app.</Text></View>;
-
   const energyControl = <View style={{ gap: 10 * s }}>
     <Text style={text(28, true)}>Energy level</Text>
     <View accessibilityLabel="Energy level" style={[styles.energy, phone && styles.energyStacked, { borderRadius: 38 * s, padding: 3 * s }]}>
@@ -152,7 +134,7 @@ export default function Index() {
       </View>;
     }
   }
-  return <View onLayout={onRootLayout} style={styles.root}>
+  return <View style={styles.root}>
     <ScrollView testID="screen-scroll"
       contentContainerStyle={[styles.scroll, compactLandscape && styles.compactScroll,
         { paddingHorizontal: narrow ? 22 : 88 * s, paddingTop: (compactLandscape ? 28 : 54) * s, paddingBottom: (compactLandscape ? 12 : 20) * s }]}>
@@ -167,7 +149,6 @@ export default function Index() {
 }
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.cream },
-  loading: { flex: 1, backgroundColor: palette.cream, justifyContent: 'center', alignItems: 'center' },
   scroll: { flexGrow: 1 },
   compactScroll: { height: '100%' },
   screenBody: { flex: 1 },

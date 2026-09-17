@@ -52,6 +52,12 @@ test('the native splash matches the first rendered screen', () => {
   assert.equal(brand.readUInt32BE(16), 512);
   assert.equal(brand.readUInt32BE(20), 512);
   assert.equal(brand[25], 6, 'header mark must use RGBA transparency');
+  const rootLayout = readFileSync('src/app/_layout.tsx', 'utf8');
+  const indexRoute = readFileSync('src/app/index.tsx', 'utf8');
+  assert.match(rootLayout, /preventAutoHideAsync/);
+  assert.match(rootLayout, /useFonts/);
+  assert.match(rootLayout, /Platform\.OS === 'ios'/);
+  assert.doesNotMatch(indexRoute, /preventAutoHideAsync|useFonts|SplashScreen/);
 });
 
 test('TV/mobile scripts and APK profiles select their targets explicitly', () => {

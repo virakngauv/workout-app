@@ -13,7 +13,7 @@ The screenshots use the 1280 × 720 web preview to document responsive layout an
 
 - Native splash background and the first rendered screen both use `#FFF9F1`.
 - The transparent smiling-kettlebell mark avoids a mismatched image rectangle on phone and TV aspect ratios.
-- The native splash remains mounted while bundled Baloo 2, Nunito, and Ionicons fonts load, then fades after the root view has laid out.
+- The root layout keeps the native splash mounted while bundled Baloo 2, Nunito, and Ionicons fonts load, then hides it after the root view has laid out. Android and Android TV use the matching `#FFF9F1` backgrounds for a seamless handoff; iOS uses Expo's native fade option.
 - The welcome screen keeps **Start workout** as the preferred TV focus and retains visible focus styling on every interactive control.
 
 ## Validation record
