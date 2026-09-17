@@ -18,7 +18,7 @@ export function RemoteButton({ label, icon, onPress, preferred = false, onFocus,
     }, 100);
     return () => clearTimeout(id);
   }, [preferred]);
-  return <Pressable ref={ref} testID={testID} accessibilityRole="button" accessibilityLabel={label}
+  return <Pressable ref={ref} testID={testID} accessibilityRole="button" accessibilityLabel={label} aria-selected={selected}
     accessibilityState={{ selected }} hasTVPreferredFocus={preferred}
     onFocus={() => { setFocused(true); onFocus?.(); }} onBlur={() => setFocused(false)} onPress={onPress}
     style={({ pressed }) => [styles.button, { paddingHorizontal: 24 * scale, paddingVertical: 14 * scale, borderRadius: 32 * scale, borderWidth: 3 * scale },

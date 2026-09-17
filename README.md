@@ -2,7 +2,7 @@
 
 An **Android TV-first** workout interface using **Expo, TypeScript, React Native TV, and Expo Router**. Android/iOS phone compatibility is retained, with a web preview for development.
 
-**Status:** the selected peach design is in progress. The app includes an energy selector, a four-week schedule, routines A/B/C, set completion, rest countdown, pause/resume, and a completion screen. All 15 user-supplied exercise illustrations are integrated with movement-specific labels and form cues. Artwork depicts representative equipment variants; the session prescription specifies the planned load. Session state is in memory and resets when the app reloads. No accounts, backend, or workout-history storage are implemented. See `design/asset-prompts.md` and `design-qa.md` for remaining work.
+**Status:** the app opens on a weekday-aware Weekly Plan, where a workout day can be reviewed and started directly. Active workouts show completed sets, percentage progress, approximate time remaining, the current set or recovery section, and completed/current/upcoming exercises. The app also includes energy presets, routines A/B/C, set completion, rest countdown, pause/resume, and a completion screen. All 15 user-supplied exercise illustrations are integrated with movement-specific labels and form cues. Session state is in memory and resets when the app reloads. No accounts, backend, or workout-history storage are implemented. See `design/asset-prompts.md` and `design-qa.md` for remaining artwork notes.
 
 ## Stack
 
@@ -204,11 +204,13 @@ npm run export:android        # production Android TV JS/assets bundle
 npm run prebuild:tv -- --no-install
 ```
 
-The Playwright suite traverses the home, plan, active exercise, paused, rest,
-and completion screens at 960×540, 1024×576, and 1280×720 logical landscape
-viewports. It fails when a major screen needs vertical scrolling or extends
-below the viewport. This guards responsive layout sizing; it does not replace
-native TV focus, remote-control, or overscan testing.
+The Playwright suite traverses the initial Weekly Plan, workout, paused, rest,
+completion, and return-to-plan states at 960×540, 1024×576, and 1280×720
+logical landscape viewports. It also checks the plan and workout at 390×844.
+The landscape tests fail when a major screen needs vertical scrolling or
+extends below the viewport. These checks guard responsive sizing and state
+transitions; they do not replace native TV focus, remote-control, or overscan
+testing.
 
 GitHub Actions performs these checks and verifies generated TV/mobile Android manifests. Its actions are pinned to commit SHAs. The workflow is read-only and does not publish, deploy, build signed releases, or provision cloud services.
 
@@ -271,9 +273,10 @@ An update requires the same application ID and compatible signing key. Switching
 ## Repository layout and conventions
 
 ```text
-src/app/_layout.tsx         Minimal Router root
-src/app/index.tsx           Home, weekly plan, and session screens
-src/workout/               Source plan, energy presets, session logic, form cues
+src/app/_layout.tsx         Router root, font loading, and native splash handoff
+src/app/index.tsx           Weekly-plan/session controller and responsive frame
+src/screens/               Weekly Plan and Active Workout presentations
+src/workout/               Source plan, progress selectors, session logic, form cues
 src/components/            Shared remote-friendly button
 assets/fonts/              Bundled Baloo 2 / Nunito fonts and OFL licenses
 assets/splash-icon.png     Transparent native splash mark
@@ -299,10 +302,10 @@ Environment files, generated output, native projects, and signing credentials ar
 - **Steady:** source sets and rep/time ranges, 45-second rest.
 - **Energized:** source sets, upper rep/time target, 45-second rest.
 
-These are explicit app presets, not rules from the PDF. Weight choices never change automatically. Routines retain the PDF's starting loads; suggested future load progressions are not automated. Sets are marked complete manually, including timed holds and both sides of unilateral movements. The rest countdown stops at zero and waits for the user to continue. Back pauses an active session; Back again resumes. Ending early returns home without recording a completed workout.
+These are explicit app presets, not rules from the PDF. Weight choices never change automatically. Routines retain the PDF's starting loads; suggested future load progressions are not automated. Sets are marked complete manually, including timed holds and both sides of unilateral movements. Approximate remaining time scales the workout's duration range by prescribed sets and completed-set progress; it is not an elapsed-time prediction. The rest countdown stops at zero and waits for the user to continue. Back pauses an active session; Back again resumes. Ending early or finishing returns to the previously selected Weekly Plan day without recording workout history.
 
 The selected visual direction uses bundled Baloo 2 ExtraBold and Nunito (SIL Open Font License from the Google Fonts repository), plus Expo Ionicons. No AI image generation was used during implementation.
 
 ## Launcher and splash artwork
 
-The Android launcher name is **GetFit**. Expo config references the square icon at `assets/icon.png`, TV banner at `assets/tv-banner.png`, and transparent native splash mark at `assets/splash-icon.png`. The root layout keeps the splash visible until bundled fonts are ready. Android and Android TV then use a seamless matched-background handoff to the welcome screen; iOS uses Expo's native fade option. The simple smiling kettlebell assets are rendered locally with `python3 scripts/render-launcher.py` (requires Pillow); no image-generation service is used. After changing these assets, clean-prebuild and rebuild the APK to update the installed launcher and splash resources.
+The Android launcher name is **GetFit**. Expo config references the square icon at `assets/icon.png`, TV banner at `assets/tv-banner.png`, and transparent native splash mark at `assets/splash-icon.png`. The root layout keeps the splash visible until bundled fonts are ready. Android and Android TV then use a seamless matched-background handoff to the Weekly Plan; iOS uses Expo's native fade option. The simple smiling kettlebell assets are rendered locally with `python3 scripts/render-launcher.py` (requires Pillow); no image-generation service is used. After changing these assets, clean-prebuild and rebuild the APK to update the installed launcher and splash resources.

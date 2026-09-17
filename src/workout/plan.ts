@@ -18,8 +18,9 @@ const row = ['Back flat', 'Pull elbow back', 'Keep neck neutral'];
 const press = ['Wrists stacked', 'Press straight up', 'Control the lowering'];
 const shoulder = ['Brace core', 'Press overhead', 'Ribs down'];
 const bridge = ['Push through heels', 'Squeeze glutes', 'Avoid arching back'];
-export const workouts: Record<WorkoutId, { duration: string; exercises: Exercise[] }> = {
-  A: { duration: '20–25 min', exercises: [
+export type Workout = { duration: string; durationMinutes: readonly [number, number]; exercises: Exercise[] };
+export const workouts: Record<WorkoutId, Workout> = {
+  A: { duration: '20–25 min', durationMinutes: [20, 25], exercises: [
     exercise('goblet-squat', 'Goblet squat', 2, 8, 10, '15 lb kettlebell', squat),
     exercise('romanian-deadlift', 'Romanian deadlift', 2, 10, 10, '15 lb kettlebell', hinge),
     exercise('one-arm-row', 'One-arm dumbbell row', 2, 10, 10, '10 lb dumbbell', row, 'side'),
@@ -28,7 +29,7 @@ export const workouts: Record<WorkoutId, { duration: string; exercises: Exercise
     exercise('glute-bridge', 'Glute bridge', 2, 12, 12, 'Bodyweight or 15 lb kettlebell', bridge),
     exercise('dead-bug', 'Dead bug', 2, 6, 8, 'Bodyweight', ['Lower back stays down', 'Move slowly', 'Reach opposite arm and leg'], 'side'),
   ] },
-  B: { duration: '20–30 min', exercises: [
+  B: { duration: '20–30 min', durationMinutes: [20, 30], exercises: [
     exercise('reverse-lunge', 'Reverse lunge', 2, 8, 8, 'Bodyweight or 5 lb each', ['Step back', 'Torso tall', 'Push through front foot'], 'leg'),
     exercise('kb-deadlift', 'Kettlebell deadlift', 2, 10, 12, '2 × 8 kg kettlebells', ['Push hips back', 'Neutral spine', 'Stand tall']),
     exercise('bent-over-row', 'Bent-over row', 2, 10, 12, '10 lb each', ['Hinge at hips', 'Squeeze shoulder blades', 'Elbows close']),
@@ -37,7 +38,7 @@ export const workouts: Record<WorkoutId, { duration: string; exercises: Exercise
     exercise('glute-bridge', 'Glute bridge / hip thrust', 2, 12, 15, '15 lb kettlebell', bridge),
     exercise('plank', 'Plank', 2, 20, 30, 'Bodyweight', ['Brace core', 'Hips level', 'Do not sag'], 'seconds'),
   ] },
-  C: { duration: '25–35 min', exercises: [
+  C: { duration: '25–35 min', durationMinutes: [25, 35], exercises: [
     exercise('goblet-squat', 'Goblet squat', 3, 8, 10, '15 lb or 8 kg kettlebell', squat),
     exercise('romanian-deadlift', 'Romanian deadlift', 3, 8, 10, '2 × 8 kg kettlebells', hinge),
     exercise('one-arm-row', 'One-arm row', 3, 8, 10, '10 lb or 8 kg', row, 'side'),
@@ -61,6 +62,7 @@ export function prescription(item: Exercise, energy: Energy) {
 }
 export type PlanDay = { label: string; workout?: WorkoutId; note?: string };
 export const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+export const getCurrentWeekdayIndex = (date = new Date()) => (date.getDay() + 6) % 7;
 export const weeks: PlanDay[][] = [
   [{ label: 'Workout A', workout: 'A' }, { label: 'Easy cardio', note: '20–25 min · incline walk, easy jog, or dancing' }, { label: 'Rest / walk' }, { label: 'Workout A', workout: 'A' }, { label: 'Rest or easy cardio' }, { label: 'Optional Pilates / walk' }, { label: 'Rest' }],
   [{ label: 'Workout A', workout: 'A' }, { label: 'Cardio', note: '20–30 min' }, { label: 'Rest / Pilates' }, { label: 'Workout B', workout: 'B' }, { label: 'Rest or easy cardio' }, { label: 'Optional A / Pilates', workout: 'A', note: 'Optional strength only if fully recovered and not unusually sore or fatigued.' }, { label: 'Rest' }],

@@ -27,7 +27,7 @@ export function ExerciseArt({ exercise, scale = 1, preview = false }: { exercise
   return <View style={[styles.panel, { padding: 26 * scale, borderRadius: 70 * scale }]}>
     {preview && <Text style={[styles.eyebrow, { fontSize: 27 * scale }]}>First up:</Text>}
     <Text accessibilityRole="header" style={[styles.heading, { fontSize: 55 * scale, lineHeight: 62 * scale }]}>{exercise.name}</Text>
-    {source ? <View style={styles.artFrame}><Image source={source} resizeMode="contain" accessibilityLabel={`${exercise.name}: ${illustration.labels.join(" and ")}`} style={styles.art} /></View> :
+    {source ? <View style={[styles.artFrame, { minHeight: 260 * scale }]}><Image source={source} resizeMode="contain" accessibilityLabel={`${exercise.name}: ${illustration.labels.join(" and ")}`} style={styles.art} /></View> :
       <View style={styles.cueOnly}>
         <Text style={[styles.eyebrow, { fontSize: 24 * scale }]}>Form reminders</Text>
         {exercise.cues.map(cue => <View key={cue} style={styles.cue}><Ionicons name="checkmark-circle" size={30 * scale} color="#B87367" /><Text style={[styles.cueText, { fontSize: 29 * scale }]}>{cue}</Text></View>)}
@@ -40,10 +40,10 @@ const styles = StyleSheet.create({
   panel: { flex: 1, backgroundColor: '#FDE8DC', alignItems: 'center' },
   eyebrow: { fontFamily: 'NunitoBold', color: palette.muted },
   heading: { fontFamily: 'Baloo', color: palette.ink, textAlign: 'center' },
-  artFrame: { width: '100%', flex: 1, minHeight: 260, marginTop: 12, overflow: 'hidden', borderRadius: 24, backgroundColor: palette.cream },
+  artFrame: { width: '100%', flex: 1, marginTop: 12, overflow: 'hidden', borderRadius: 24, backgroundColor: palette.cream },
   art: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
-  labels: { flexDirection: 'row', width: '100%', justifyContent: 'space-around' },
-  label: { fontFamily: 'NunitoBold', color: palette.ink },
+  labels: { flexDirection: 'row', width: '100%' },
+  label: { flex: 1, fontFamily: 'NunitoBold', color: palette.ink, textAlign: 'center' },
   cueOnly: { flex: 1, justifyContent: 'center', gap: 30, width: '100%', padding: 24 },
   cues: { gap: 10, marginTop: 20, alignSelf: 'stretch' },
   cue: { flexDirection: 'row', alignItems: 'center', gap: 12 },

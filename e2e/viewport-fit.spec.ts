@@ -29,15 +29,21 @@ for (const viewport of landscapeViewports) {
     await page.setViewportSize(viewport);
     await page.goto('/');
 
-    await expectScreenFits(page, 'home');
-
-    await page.getByTestId('view-plan').click();
     await expectScreenFits(page, 'plan');
-    await page.getByRole('button', { name: 'Back' }).click();
+    const currentDay = (new Date().getDay() + 6) % 7;
+    await expect(page.getByTestId(`day-${currentDay}`)).toHaveAttribute('aria-selected', 'true');
+
+    await page.getByTestId('day-6').click();
+    await expect(page.getByTestId('rest-day-state')).toBeVisible();
+    await expect(page.getByTestId('start-workout')).toHaveCount(0);
+
+    await page.getByTestId('day-0').click();
 
     await page.getByTestId('energy-gentle').click();
     await page.getByTestId('start-workout').click();
     await expectScreenFits(page, 'exercise');
+    await expect(page.getByTestId('progress-summary')).toContainText('0 of 7 sets complete');
+    await expect(page.getByTestId('remaining-summary')).toContainText('About');
 
     await page.keyboard.press('Escape');
     await expectScreenFits(page, 'paused');
@@ -52,5 +58,22 @@ for (const viewport of landscapeViewports) {
       if (exercise < 6) await page.getByTestId('session-primary').click();
     }
     await expectScreenFits(page, 'complete');
+    await expect(page.getByTestId('progress-summary')).toContainText('7 of 7 sets complete');
+    await page.getByRole('button', { name: 'Back to weekly plan' }).click();
+    await expectScreenFits(page, 'plan');
   });
 }
+
+test('weekly plan and active workout remain usable on a phone-sized layout', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await expect(page.getByTestId('screen-plan')).toBeVisible();
+
+  await page.getByTestId('day-0').click();
+  await page.getByTestId('start-workout').click();
+  await expect(page.getByTestId('screen-exercise')).toBeVisible();
+
+  const widths = await page.evaluate(() => ({ viewport: window.innerWidth, document: document.documentElement.scrollWidth }));
+  expect(widths.document).toBeLessThanOrEqual(widths.viewport);
+  await expect(page.getByTestId('session-primary')).toBeVisible();
+});

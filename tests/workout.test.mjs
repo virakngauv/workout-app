@@ -12,8 +12,14 @@ for (const name of ['plan', 'session']) {
   const source = readFileSync(`src/workout/${name}.ts`, 'utf8').replace("from './plan'", "from './plan.mjs'");
   writeFileSync(join(folder, `${name}.mjs`), ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText);
 }
-const { prescription, workouts, energies, getWeek, weeks } = await import(pathToFileURL(join(folder, 'plan.mjs')));
-const { startSession, sessionReducer } = await import(pathToFileURL(join(folder, 'session.mjs')));
+const { prescription, workouts, energies, getCurrentWeekdayIndex, getWeek, weeks } = await import(pathToFileURL(join(folder, 'plan.mjs')));
+const { getSessionProgress, startSession, sessionReducer, totalPrescribedSets } = await import(pathToFileURL(join(folder, 'session.mjs')));
+
+test('weekday selection converts JavaScript Sunday-first dates to the Monday-first plan', () => {
+  assert.equal(getCurrentWeekdayIndex(new Date(2026, 8, 14)), 0);
+  assert.equal(getCurrentWeekdayIndex(new Date(2026, 8, 16)), 2);
+  assert.equal(getCurrentWeekdayIndex(new Date(2026, 8, 20)), 6);
+});
 
 test('energy presets stay within source rep ranges, retain load, and reduce only Gentle sets', () => {
   for (const workout of Object.values(workouts)) for (const item of workout.exercises) {
@@ -65,4 +71,34 @@ test('rest timer freezes when paused, never goes negative, and never auto-starts
   state = sessionReducer(state, { type: 'continue' });
   assert.equal(state.exercise, 1);
   assert.equal(state.set, 1);
+});
+
+test('progress reports total work, time remaining, and completed/current/upcoming sections', () => {
+  let state = startSession('A', 'Steady');
+  assert.equal(totalPrescribedSets('A', 'Steady'), 14);
+  assert.equal(totalPrescribedSets('A', 'Gentle'), 7);
+  assert.deepEqual(getSessionProgress(state), {
+    completedSets: 0,
+    totalSets: 14,
+    percent: 0,
+    remainingMinutes: 23,
+    sectionLabel: 'Set 1 of 2',
+    activeExercise: 0,
+    exerciseStatuses: ['current', 'upcoming', 'upcoming', 'upcoming', 'upcoming', 'upcoming', 'upcoming'],
+  });
+
+  state = sessionReducer(state, { type: 'complete-set' });
+  let progress = getSessionProgress(state);
+  assert.equal(progress.completedSets, 1);
+  assert.equal(progress.percent, 7);
+  assert.equal(progress.remainingMinutes, 21);
+  assert.equal(progress.sectionLabel, 'Recovery');
+  assert.equal(progress.exerciseStatuses[0], 'current');
+
+  state = sessionReducer(state, { type: 'continue' });
+  assert.equal(getSessionProgress(state).sectionLabel, 'Set 2 of 2');
+  state = sessionReducer(state, { type: 'complete-set' });
+  progress = getSessionProgress(state);
+  assert.equal(progress.activeExercise, 1);
+  assert.deepEqual(progress.exerciseStatuses.slice(0, 3), ['completed', 'current', 'upcoming']);
 });
