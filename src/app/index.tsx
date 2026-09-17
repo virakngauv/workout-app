@@ -31,8 +31,8 @@ export default function Index() {
     setSession(null);
     setScreen('plan');
   }, []);
-  const startWorkout = useCallback((workout: WorkoutId) => {
-    setSession(startSession(workout, energy));
+  const startWorkout = useCallback((workout: WorkoutId, core?: WorkoutId) => {
+    setSession(startSession(workout, energy, core));
     setScreen('session');
   }, [energy]);
   const onBack = useCallback(() => {

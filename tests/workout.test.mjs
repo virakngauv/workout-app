@@ -13,7 +13,7 @@ for (const name of ['plan', 'session']) {
   writeFileSync(join(folder, `${name}.mjs`), ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText);
 }
 const { prescription, workouts, energies, getCurrentWeekdayIndex, getWeek, weeks } = await import(pathToFileURL(join(folder, 'plan.mjs')));
-const { getSessionProgress, startSession, sessionReducer, totalPrescribedSets } = await import(pathToFileURL(join(folder, 'session.mjs')));
+const { getSessionExercises, getSessionProgress, startSession, sessionReducer, totalPrescribedSets } = await import(pathToFileURL(join(folder, 'session.mjs')));
 
 test('weekday selection converts JavaScript Sunday-first dates to the Monday-first plan', () => {
   assert.equal(getCurrentWeekdayIndex(new Date(2026, 8, 14)), 0);
@@ -29,31 +29,47 @@ test('energy presets stay within source rep ranges, retain load, and reduce only
     assert.ok(prescription(item, 'Gentle').target.startsWith(String(item.min)));
     assert.ok(prescription(item, 'Energized').target.startsWith(String(item.max)));
   }
-  assert.equal(workouts.A.exercises[0].load, '15 lb kettlebell');
+  assert.equal(workouts.A.exercises[0].load, '15 lb KB; progress to 8 kg if controlled');
   assert.equal(getWeek(1).filter(day => day.workout).length, 2);
-  assert.equal(getWeek(2)[5].workout, 'A');
-  assert.match(getWeek(2)[5].note, /Optional/);
-  assert.equal(weeks.length, 4);
-  assert.deepEqual(getWeek(4), getWeek(3));
+  assert.equal(getWeek(2)[3].workout, 'B');
+  assert.equal(getWeek(2)[3].core, 'Core1');
+  assert.deepEqual(workouts.Core1.exercises.map(item => item.id), ['dead-bug', 'side-plank']);
+  assert.equal(workouts.B.exercises.some(item => item.id === 'plank'), false);
+  assert.equal(weeks.length, 6);
   assert.equal(getWeek(0), weeks[0]);
-  assert.equal(getWeek(5), weeks[3]);
+  assert.equal(getWeek(7), weeks[5]);
 });
 
-test('each complete session traverses every prescribed set once and ends on the last set', () => {
-  for (const id of ['A', 'B', 'C']) for (const energy of energies) {
-    let state = startSession(id, energy);
-    const total = workouts[id].exercises.reduce((sum, item) => sum + prescription(item, energy).sets, 0);
-    for (let completed = 1; completed <= total; completed++) {
+test('sessions traverse exercises round-by-round before starting the next set', () => {
+  const sessions = [
+    { workout: 'A' },
+    { workout: 'B', core: 'Core1' },
+    { workout: 'C', core: 'Core2' },
+  ];
+  for (const config of sessions) for (const energy of energies) {
+    let state = startSession(config.workout, energy, config.core);
+    const exercises = getSessionExercises(state);
+    const maxSets = Math.max(...exercises.map(item => prescription(item, energy).sets));
+    const expected = [];
+    for (let set = 1; set <= maxSets; set += 1) {
+      for (const [exercise, item] of exercises.entries()) {
+        if (prescription(item, energy).sets >= set) expected.push({ exercise, set, id: item.id });
+      }
+    }
+    assert.equal(expected.length, totalPrescribedSets(config.workout, energy, config.core));
+    for (const [completed, position] of expected.entries()) {
       assert.equal(state.phase, 'exercise');
+      assert.equal(state.exercise, position.exercise);
+      assert.equal(state.set, position.set);
+      assert.equal(exercises[state.exercise].id, position.id);
       state = sessionReducer(state, { type: 'complete-set' });
-      assert.equal(state.completedSets, completed);
-      assert.equal(state.phase, completed === total ? 'complete' : 'rest');
-      if (completed < total) {
+      assert.equal(state.completedSets, completed + 1);
+      assert.equal(state.phase, completed === expected.length - 1 ? 'complete' : 'rest');
+      if (completed < expected.length - 1) {
         assert.equal(state.remaining, 45);
         state = sessionReducer(state, { type: 'continue' });
       }
     }
-    assert.equal(state.exercise, 6);
     assert.deepEqual(sessionReducer(state, { type: 'complete-set' }), state);
   }
 });
@@ -75,30 +91,49 @@ test('rest timer freezes when paused, never goes negative, and never auto-starts
 
 test('progress reports total work, time remaining, and completed/current/upcoming sections', () => {
   let state = startSession('A', 'Steady');
-  assert.equal(totalPrescribedSets('A', 'Steady'), 14);
-  assert.equal(totalPrescribedSets('A', 'Gentle'), 7);
+  assert.equal(totalPrescribedSets('A', 'Steady'), 12);
+  assert.equal(totalPrescribedSets('A', 'Gentle'), 6);
   assert.deepEqual(getSessionProgress(state), {
     completedSets: 0,
-    totalSets: 14,
+    totalSets: 12,
     percent: 0,
-    remainingMinutes: 23,
+    remainingMinutes: 25,
     sectionLabel: 'Set 1 of 2',
     activeExercise: 0,
-    exerciseStatuses: ['current', 'upcoming', 'upcoming', 'upcoming', 'upcoming', 'upcoming', 'upcoming'],
+    activeSet: 1,
+    exerciseStatuses: ['current', 'upcoming', 'upcoming', 'upcoming', 'upcoming', 'upcoming'],
   });
 
   state = sessionReducer(state, { type: 'complete-set' });
   let progress = getSessionProgress(state);
   assert.equal(progress.completedSets, 1);
-  assert.equal(progress.percent, 7);
-  assert.equal(progress.remainingMinutes, 21);
+  assert.equal(progress.percent, 8);
+  assert.equal(progress.remainingMinutes, 23);
   assert.equal(progress.sectionLabel, 'Recovery');
-  assert.equal(progress.exerciseStatuses[0], 'current');
-
-  state = sessionReducer(state, { type: 'continue' });
-  assert.equal(getSessionProgress(state).sectionLabel, 'Set 2 of 2');
-  state = sessionReducer(state, { type: 'complete-set' });
-  progress = getSessionProgress(state);
   assert.equal(progress.activeExercise, 1);
   assert.deepEqual(progress.exerciseStatuses.slice(0, 3), ['completed', 'current', 'upcoming']);
+
+  state = sessionReducer(state, { type: 'continue' });
+  assert.equal(getSessionProgress(state).sectionLabel, 'Set 1 of 2');
+  for (let exercise = 1; exercise < 6; exercise += 1) {
+    assert.equal(state.exercise, exercise);
+    state = sessionReducer(state, { type: 'complete-set' });
+    if (exercise < 5) state = sessionReducer(state, { type: 'continue' });
+  }
+  progress = getSessionProgress(state);
+  assert.equal(progress.activeExercise, 0);
+  assert.equal(progress.activeSet, 2);
+  assert.deepEqual(progress.exerciseStatuses.slice(0, 3), ['current', 'upcoming', 'upcoming']);
+  state = sessionReducer(state, { type: 'continue' });
+  assert.equal(state.exercise, 0);
+  assert.equal(state.set, 2);
+});
+
+test('week 2 Thursday combines Workout B with the reference Core 1 sequence', () => {
+  const day = getWeek(2)[3];
+  const state = startSession(day.workout, 'Steady', day.core);
+  assert.deepEqual(getSessionExercises(state).map(item => item.id), [
+    'reverse-lunge', 'kb-deadlift', 'one-arm-row', 'wall-push-up', 'lateral-raise', 'dead-bug', 'side-plank',
+  ]);
+  assert.equal(totalPrescribedSets(day.workout, 'Steady', day.core), 14);
 });

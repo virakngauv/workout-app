@@ -5,6 +5,7 @@ import {
   energies,
   energyDetails,
   getWeek,
+  weekGoals,
   weekdays,
   workouts,
   type Energy,
@@ -28,7 +29,7 @@ type Props = {
   onWeekChange: (week: number) => void;
   onDayChange: (day: number) => void;
   onEnergyChange: (energy: Energy) => void;
-  onStartWorkout: (workout: WorkoutId) => void;
+  onStartWorkout: (workout: WorkoutId, core?: WorkoutId) => void;
 };
 
 export function WeeklyPlanScreen({
@@ -46,6 +47,9 @@ export function WeeklyPlanScreen({
 }: Props) {
   const selected = getWeek(week)[day]!;
   const workout = selected.workout ? workouts[selected.workout] : null;
+  const core = selected.core ? workouts[selected.core] : null;
+  const exercises = [...(workout?.exercises ?? []), ...(core?.exercises ?? [])];
+  const sessionLabel = [workout?.title, core?.title].filter(Boolean).join(' + ');
   const text = (size: number, bold = false) => ({
     color: palette.ink,
     fontFamily: bold ? 'NunitoBold' : 'Nunito',
@@ -64,12 +68,12 @@ export function WeeklyPlanScreen({
         <Image accessibilityIgnoresInvertColors source={require('../../assets/brand-mark.png')} resizeMode="contain"
           style={{ width: 58 * scale, height: 58 * scale }} />
         <View>
-          <Text style={text(20, true)}>YOUR FOUR-WEEK PLAN</Text>
+          <Text style={text(20, true)}>YOUR SIX-WEEK PLAN</Text>
           <Text accessibilityRole="header" style={heading(phone ? 48 : 58)}>Weekly Plan</Text>
         </View>
       </View>
       <View accessibilityLabel="Choose plan week" style={[styles.weekSelector, { gap: 8 * scale }]}>
-        {[1, 2, 3, 4].map(value => <RemoteButton key={value} label={`Week ${value}`} selected={week === value}
+        {[1, 2, 3, 4, 5, 6].map(value => <RemoteButton key={value} label={value === 6 ? 'Week 6+' : `Week ${value}`} selected={week === value}
           scale={scale * 0.68} onPress={() => onWeekChange(value)} testID={`week-${value}`} />)}
       </View>
     </View>
@@ -89,10 +93,15 @@ export function WeeklyPlanScreen({
         </View>
         <Text accessibilityRole="header" style={heading(phone ? 42 : 48)}>{selected.label}</Text>
         <Text style={text(23)}>{selected.note ?? (workout
-          ? `${workout.duration} · ${workout.exercises.length} exercises`
+          ? `${workout.duration}${core ? ` + ${core.duration}` : ''} · ${exercises.length} exercises`
           : 'A little space to rest and recover.')}</Text>
         {workout
-          ? <Text style={[text(19), styles.exerciseList]}>{workout.exercises.map(item => item.name).join(' · ')}</Text>
+          ? <View style={{ gap: 8 * scale }}>
+              <Text style={[text(19), styles.exerciseList]}>{workout.exercises.map(item => item.name).join(' · ')}</Text>
+              {core && <Text testID="core-plan" style={[text(19), styles.exerciseList]}>
+                {core.title}: {core.exercises.map(item => item.name).join(' · ')}
+              </Text>}
+            </View>
           : <View testID="rest-day-state" style={[styles.restState, { gap: 12 * scale, marginTop: 8 * scale }]}>
               <Ionicons name="leaf-outline" size={34 * scale} color={palette.muted} />
               <Text style={text(21, true)}>No strength workout scheduled. Browse another day whenever you like.</Text>
@@ -108,11 +117,12 @@ export function WeeklyPlanScreen({
             onPress={() => onEnergyChange(value)} testID={`energy-${value.toLowerCase()}`} style={styles.energyOption} />)}
         </View>
         <Text accessibilityLiveRegion="polite" style={[text(18), { color: palette.muted }]}>{energyDetails[energy]}</Text>
-        <RemoteButton label={`Start Workout ${selected.workout}`} icon="play" primary scale={scale * 0.82}
-          onPress={() => onStartWorkout(selected.workout!)} testID="start-workout" style={{ marginTop: 4 * scale }} />
+        <RemoteButton label={`Start ${sessionLabel}`} icon="play" primary scale={scale * 0.82}
+          onPress={() => onStartWorkout(selected.workout!, selected.core)} testID="start-workout" style={{ marginTop: 4 * scale }} />
       </View>}
     </View>
 
+    <Text style={[text(18), { color: palette.muted }]}>Goal · {weekGoals[week - 1]}</Text>
     <Text style={[text(18), { color: palette.muted }]}>Planning mode · Pick a day, review the workout, then start when you are ready.</Text>
   </View>;
 }

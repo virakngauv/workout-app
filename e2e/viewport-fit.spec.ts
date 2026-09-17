@@ -37,13 +37,21 @@ for (const viewport of landscapeViewports) {
     await expect(page.getByTestId('rest-day-state')).toBeVisible();
     await expect(page.getByTestId('start-workout')).toHaveCount(0);
 
+    await page.getByTestId('week-2').click();
+    await page.getByTestId('day-3').click();
+    await expect(page.getByTestId('core-plan')).toContainText('Core 1: Dead bug · Side plank');
+    await expect(page.getByTestId('core-plan')).not.toContainText('Forearm plank');
+    await expect(page.getByTestId('start-workout')).toHaveAccessibleName('Start Workout B + Core 1');
+
+    await page.getByTestId('week-1').click();
     await page.getByTestId('day-0').click();
 
     await page.getByTestId('energy-gentle').click();
     await page.getByTestId('start-workout').click();
     await expectScreenFits(page, 'exercise');
-    await expect(page.getByTestId('progress-summary')).toContainText('0 of 7 sets complete');
+    await expect(page.getByTestId('progress-summary')).toContainText('0 of 6 sets complete');
     await expect(page.getByTestId('remaining-summary')).toContainText('About');
+    await expect(page.getByTestId('current-exercise-name')).toHaveText('Goblet squat');
 
     await page.keyboard.press('Escape');
     await expectScreenFits(page, 'paused');
@@ -51,14 +59,16 @@ for (const viewport of landscapeViewports) {
 
     await page.getByTestId('session-primary').click();
     await expectScreenFits(page, 'rest');
+    await expect(page.getByTestId('next-exercise-summary')).toContainText('Next: Romanian deadlift · Set 1 of 1');
     await page.getByTestId('session-primary').click();
+    await expect(page.getByTestId('current-exercise-name')).toHaveText('Romanian deadlift');
 
-    for (let exercise = 1; exercise < 7; exercise += 1) {
+    for (let exercise = 1; exercise < 6; exercise += 1) {
       await page.getByTestId('session-primary').click();
-      if (exercise < 6) await page.getByTestId('session-primary').click();
+      if (exercise < 5) await page.getByTestId('session-primary').click();
     }
     await expectScreenFits(page, 'complete');
-    await expect(page.getByTestId('progress-summary')).toContainText('7 of 7 sets complete');
+    await expect(page.getByTestId('progress-summary')).toContainText('6 of 6 sets complete');
     await page.getByRole('button', { name: 'Back to weekly plan' }).click();
     await expectScreenFits(page, 'plan');
   });

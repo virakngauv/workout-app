@@ -2,8 +2,15 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { StyleSheet, Text, View, type DimensionValue } from 'react-native';
 import { RemoteButton, palette } from '../components/RemoteButton';
 import { ExerciseArt } from '../workout/ExerciseArt';
-import { prescription, workouts } from '../workout/plan';
-import { getSessionProgress, type Session, type SessionAction } from '../workout/session';
+import { prescription } from '../workout/plan';
+import {
+  getNextSessionPosition,
+  getSessionExercises,
+  getSessionProgress,
+  getSessionTitle,
+  type Session,
+  type SessionAction,
+} from '../workout/session';
 
 type Props = {
   session: Session;
@@ -15,11 +22,13 @@ type Props = {
 };
 
 export function ActiveWorkoutScreen({ session, scale, narrow, compactLandscape, dispatch, onReturnToPlan }: Props) {
-  const workout = workouts[session.workout];
-  const item = workout.exercises[session.exercise]!;
+  const exercises = getSessionExercises(session);
+  const sessionTitle = getSessionTitle(session);
+  const item = exercises[session.exercise]!;
   const dose = prescription(item, session.energy);
   const progress = getSessionProgress(session);
-  const nextItem = session.set < dose.sets ? item : workout.exercises[session.exercise + 1];
+  const nextPosition = getNextSessionPosition(session);
+  const nextItem = nextPosition ? exercises[nextPosition.exercise] : undefined;
   const text = (size: number, bold = false) => ({
     color: palette.ink,
     fontFamily: bold ? 'NunitoBold' : 'Nunito',
@@ -34,7 +43,7 @@ export function ActiveWorkoutScreen({ session, scale, narrow, compactLandscape, 
 
   const progressHeader = <View style={[styles.progressHeader, { gap: 9 * scale }]}>
     <View style={styles.progressSummary}>
-      <Text style={text(20, true)}>WORKOUT {session.workout} · {progress.sectionLabel.toUpperCase()}</Text>
+      <Text style={text(20, true)}>{sessionTitle.toUpperCase()} · {progress.sectionLabel.toUpperCase()}</Text>
       <Text testID="remaining-summary" accessibilityLiveRegion="polite" style={text(19, true)}>
         {progress.remainingMinutes ? `About ${progress.remainingMinutes} min left` : 'All done'}
       </Text>
@@ -47,7 +56,7 @@ export function ActiveWorkoutScreen({ session, scale, narrow, compactLandscape, 
   </View>;
 
   const roadmap = <View accessibilityLabel="Workout sections" style={[styles.roadmap, { gap: 6 * scale }]}>
-    {workout.exercises.map((exercise, index) => {
+    {exercises.map((exercise, index) => {
       const status = progress.exerciseStatuses[index]!;
       return <View key={exercise.id} accessible accessibilityLabel={`${exercise.name}, ${status}`}
         style={[styles.roadmapItem, status === 'completed' && styles.roadmapCompleted,
@@ -68,7 +77,7 @@ export function ActiveWorkoutScreen({ session, scale, narrow, compactLandscape, 
       <View style={styles.centered}>
         <Ionicons name="pause-circle-outline" size={74 * scale} color="#A56F59" />
         <Text accessibilityRole="header" style={[heading(66), { marginTop: 10 * scale }]}>Workout paused</Text>
-        <Text style={[text(24), { marginTop: 8 * scale }]}>{item.name} · {progress.sectionLabel}</Text>
+        <Text style={[text(24), { marginTop: 8 * scale }]}>{exercises[progress.activeExercise]?.name} · Set {progress.activeSet}</Text>
         <View style={{ width: narrow ? '100%' : 560 * scale, gap: 14 * scale, marginTop: 26 * scale }}>
           <RemoteButton label="Resume workout" icon="play" primary preferred scale={scale * 0.85}
             onPress={() => dispatch({ type: 'resume' })} />
@@ -85,7 +94,7 @@ export function ActiveWorkoutScreen({ session, scale, narrow, compactLandscape, 
       <View style={styles.centered}>
         <Ionicons name="checkmark-circle-outline" size={82 * scale} color="#A56F59" />
         <Text accessibilityRole="header" style={[heading(68), { marginTop: 10 * scale }]}>You showed up.</Text>
-        <Text style={[text(25), { marginTop: 8 * scale }]}>Workout {session.workout} complete · {session.completedSets} sets</Text>
+        <Text style={[text(25), { marginTop: 8 * scale }]}>{sessionTitle} complete · {session.completedSets} sets</Text>
         <RemoteButton label="Back to weekly plan" icon="calendar-outline" primary preferred scale={scale * 0.85}
           onPress={onReturnToPlan} style={{ marginTop: 28 * scale, width: narrow ? '100%' : 540 * scale }} />
       </View>
@@ -99,13 +108,13 @@ export function ActiveWorkoutScreen({ session, scale, narrow, compactLandscape, 
     <View style={[styles.columns, narrow && styles.stacked, { gap: 30 * scale }]}>
       <View style={[styles.workoutCopy, { gap: 12 * scale }]}>
         <View style={[styles.sectionBadge, { borderRadius: 22 * scale, paddingHorizontal: 14 * scale, paddingVertical: 6 * scale }]}>
-          <Text style={text(19, true)}>{resting ? 'RECOVERY' : `EXERCISE ${session.exercise + 1} OF ${workout.exercises.length} · ${progress.sectionLabel.toUpperCase()}`}</Text>
+          <Text style={text(19, true)}>{resting ? 'RECOVERY' : `EXERCISE ${session.exercise + 1} OF ${exercises.length} · ${progress.sectionLabel.toUpperCase()}`}</Text>
         </View>
-        <Text accessibilityRole="header" style={heading(resting ? 58 : 55)}>{resting ? 'A little breather.' : item.name}</Text>
+        <Text testID="current-exercise-name" accessibilityRole="header" style={heading(resting ? 58 : 55)}>{resting ? 'A little breather.' : item.name}</Text>
         {resting ? <>
           <Text style={[heading(82), { fontVariant: ['tabular-nums'] }]}>{Math.floor(session.remaining / 60)}:{String(session.remaining % 60).padStart(2, '0')}</Text>
           <Text style={text(22)}>{session.remaining ? 'Rest, then continue when you are ready.' : 'Ready whenever you are.'}</Text>
-          <Text style={text(21, true)}>Next: {nextItem?.name}{nextItem === item ? ` · Set ${session.set + 1} of ${dose.sets}` : ''}</Text>
+          <Text testID="next-exercise-summary" style={text(21, true)}>Next: {nextItem?.name}{nextPosition ? ` · Set ${nextPosition.set} of ${prescription(nextItem!, session.energy).sets}` : ''}</Text>
         </> : <>
           <Text style={heading(52)}>{dose.target}</Text>
           <Text style={text(25, true)}>{progress.sectionLabel} · {item.load}</Text>
