@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { RemoteButton, palette, type IconName } from '../components/RemoteButton';
 import {
@@ -45,6 +46,7 @@ export function WeeklyPlanScreen({
   onEnergyChange,
   onStartWorkout,
 }: Props) {
+  const [preferredDay] = useState(() => day);
   const selected = getWeek(week)[day]!;
   const workout = selected.workout ? workouts[selected.workout] : null;
   const core = selected.core ? workouts[selected.core] : null;
@@ -79,9 +81,9 @@ export function WeeklyPlanScreen({
     </View>
 
     <View accessibilityLabel="Choose a day" style={[styles.days, narrow && styles.daysNarrow, { gap: 8 * scale }]}>
-      {getWeek(week).map((entry, index) => <RemoteButton key={`${week}-${index}`}
+      {getWeek(week).map((entry, index) => <RemoteButton key={index}
         label={`${weekdays[index]}${index === currentDay ? ' · Today' : ''}\n${entry.label}`}
-        selected={day === index} preferred={day === index} scale={scale * 0.72}
+        selected={day === index} preferred={preferredDay === index} scale={scale * 0.72}
         onFocus={() => onDayChange(index)} onPress={() => onDayChange(index)} testID={`day-${index}`}
         style={[styles.day, narrow && styles.dayNarrow, { minHeight: 90 * scale }]} />)}
     </View>

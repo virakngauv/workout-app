@@ -31,13 +31,18 @@ for (const viewport of landscapeViewports) {
 
     await expectScreenFits(page, 'plan');
     const currentDay = (new Date().getDay() + 6) % 7;
-    await expect(page.getByTestId(`day-${currentDay}`)).toHaveAttribute('aria-selected', 'true');
+    const currentDayButton = page.getByTestId(`day-${currentDay}`);
+    await expect(currentDayButton).toHaveAttribute('aria-selected', 'true');
+    await expect(currentDayButton).toBeFocused();
 
     await page.getByTestId('day-6').click();
     await expect(page.getByTestId('rest-day-state')).toBeVisible();
     await expect(page.getByTestId('start-workout')).toHaveCount(0);
 
-    await page.getByTestId('week-2').click();
+    const weekTwo = page.getByTestId('week-2');
+    await weekTwo.click();
+    await page.waitForTimeout(150);
+    await expect(weekTwo).toBeFocused();
     await page.getByTestId('day-3').click();
     await expect(page.getByTestId('core-plan')).toContainText('Core 1: Dead bug · Side plank');
     await expect(page.getByTestId('core-plan')).not.toContainText('Forearm plank');

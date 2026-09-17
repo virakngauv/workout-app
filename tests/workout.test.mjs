@@ -93,6 +93,8 @@ test('progress reports total work, time remaining, and completed/current/upcomin
   let state = startSession('A', 'Steady');
   assert.equal(totalPrescribedSets('A', 'Steady'), 12);
   assert.equal(totalPrescribedSets('A', 'Gentle'), 6);
+  assert.equal(getSessionProgress(startSession('A', 'Gentle')).remainingMinutes, 13);
+  assert.equal(getSessionProgress(startSession('A', 'Steady', 'Core1')).remainingMinutes, 34);
   assert.deepEqual(getSessionProgress(state), {
     completedSets: 0,
     totalSets: 12,

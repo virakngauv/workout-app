@@ -67,12 +67,11 @@ export function getSessionProgress(session: Session): SessionProgress {
   const totalSets = totalPrescribedSets(session.workout, session.energy, session.core);
   const completedSets = Math.min(session.completedSets, totalSets);
   const percent = totalSets === 0 ? 100 : Math.round(completedSets / totalSets * 100);
-  const timedWorkouts = [workouts[session.workout], session.core ? workouts[session.core] : null]
-    .filter(workout => workout?.durationMinutes);
-  const estimatedMinutes = timedWorkouts.reduce((total, workout) => {
-    const duration = workout!.durationMinutes!;
-    return total + (duration[0] + duration[1]) / 2;
-  }, 0);
+  const workout = workouts[session.workout];
+  const baselineSets = workout.exercises.reduce((total, item) => total + item.sets, 0);
+  const duration = workout.durationMinutes;
+  const minutesPerSet = duration && baselineSets > 0 ? ((duration[0] + duration[1]) / 2) / baselineSets : 0;
+  const estimatedMinutes = minutesPerSet * totalSets;
   const remainingMinutes = session.phase === 'complete' ? 0 : Math.max(1, Math.ceil(estimatedMinutes * (1 - completedSets / totalSets)));
   const nextPosition = session.phase === 'rest' ? getNextSessionPosition(session) : null;
   const activeExercise = session.phase === 'complete' ? exercises.length - 1 : nextPosition?.exercise ?? session.exercise;
