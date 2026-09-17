@@ -4,7 +4,7 @@ import { Platform, Pressable, StyleSheet, Text, View, type StyleProp, type ViewS
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
 export const palette = { cream: '#FFF9F1', ink: '#49312B', muted: '#77584E', peach: '#FFE5D9', coral: '#ED8F87', border: '#EBC7B8' };
-export function RemoteButton({ label, icon, onPress, preferred = false, onFocus, selected = false, primary = false, scale = 1, style, testID }: {
+export function RemoteButton({ label, icon, onPress, preferred = false, onFocus, selected, primary = false, scale = 1, style, testID }: {
   label: string; icon?: IconName; onPress: () => void; preferred?: boolean; onFocus?: () => void;
   selected?: boolean; primary?: boolean; scale?: number; style?: StyleProp<ViewStyle>; testID?: string;
 }) {
@@ -18,8 +18,8 @@ export function RemoteButton({ label, icon, onPress, preferred = false, onFocus,
     }, 100);
     return () => clearTimeout(id);
   }, [preferred]);
-  return <Pressable ref={ref} testID={testID} accessibilityRole="button" accessibilityLabel={label}
-    accessibilityState={{ selected }} hasTVPreferredFocus={preferred}
+  return <Pressable ref={ref} testID={testID} accessibilityRole="button" accessibilityLabel={label} aria-pressed={selected}
+    accessibilityState={selected === undefined ? undefined : { selected }} hasTVPreferredFocus={preferred}
     onFocus={() => { setFocused(true); onFocus?.(); }} onBlur={() => setFocused(false)} onPress={onPress}
     style={({ pressed }) => [styles.button, { paddingHorizontal: 24 * scale, paddingVertical: 14 * scale, borderRadius: 32 * scale, borderWidth: 3 * scale },
       primary && styles.primary, style, selected && styles.selected, focused && styles.focused, pressed && { opacity: 0.8 }]}>

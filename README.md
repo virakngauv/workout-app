@@ -2,7 +2,7 @@
 
 An **Android TV-first** workout interface using **Expo, TypeScript, React Native TV, and Expo Router**. Android/iOS phone compatibility is retained, with a web preview for development.
 
-**Status:** the selected peach design is in progress. The app includes an energy selector, a four-week schedule, routines A/B/C, set completion, rest countdown, pause/resume, and a completion screen. All 15 user-supplied exercise illustrations are integrated with movement-specific labels and form cues. Artwork depicts representative equipment variants; the session prescription specifies the planned load. Session state is in memory and resets when the app reloads. No accounts, backend, or workout-history storage are implemented. See `design/asset-prompts.md` and `design-qa.md` for remaining work.
+**Status:** the app opens on a weekday-aware six-week Weekly Plan, where a workout day can be reviewed and started directly. Active workouts show completed sets, percentage progress, approximate time remaining, the current set or recovery section, and completed/current/upcoming exercises. Exercises run as rounds: complete set 1 of every exercise before beginning set 2. The app also includes energy presets, routines A/B/C, Core 1/Core 2 add-ons, set completion, rest countdown, pause/resume, and a completion screen. Seconds-based exercises have an explicit start/pause/reset timer with soft cues at two seconds, one second, and zero; per-side holds reuse the timer for each side. All 15 user-supplied exercise illustrations are integrated with movement-specific labels and form cues; suitcase carry uses the form-cue fallback. Session state is in memory and resets when the app reloads. No accounts, backend, or workout-history storage are implemented. See `design/asset-prompts.md` and `design-qa.md` for remaining artwork notes.
 
 ## Stack
 
@@ -112,6 +112,16 @@ npm run web
 
 A browser preview is not a TV focus/navigation test. Exercise the interface using D-pad directions, Select, and Back on an Android TV emulator and real device. The web preview also supports arrows, Enter, and Escape. Browser keyboard checks are not proof of native TV focus behavior.
 
+### Timer cue assets
+
+The timer's two short countdown cues and longer zero cue are generated deterministically with Python's standard library:
+
+```sh
+python3 scripts/render-timer-tones.py
+```
+
+This command writes `assets/audio/timer-short.wav` and `assets/audio/timer-long.wav`. Regenerate and commit both files after changing the tone script, then rebuild the native app so the bundled assets reach the device.
+
 ## Use a physical TV
 
 An APK needs an Android-compatible device. Confirm the actual operating system/model rather than assuming every Hisense TV runs Android. For this project, target a **Hisense running Google TV/Android TV**, or a **Chromecast with Google TV**. Do not assume a VIDAA/Roku television or a classic casting-only Chromecast can install this APK. Start with the emulator while hardware details are unconfirmed.
@@ -204,11 +214,13 @@ npm run export:android        # production Android TV JS/assets bundle
 npm run prebuild:tv -- --no-install
 ```
 
-The Playwright suite traverses the home, plan, active exercise, paused, rest,
-and completion screens at 960×540, 1024×576, and 1280×720 logical landscape
-viewports. It fails when a major screen needs vertical scrolling or extends
-below the viewport. This guards responsive layout sizing; it does not replace
-native TV focus, remote-control, or overscan testing.
+The Playwright suite traverses the initial Weekly Plan, workout, paused, rest,
+completion, and return-to-plan states at 960×540, 1024×576, and 1280×720
+logical landscape viewports. It also checks the plan and workout at 390×844.
+The landscape tests fail when a major screen needs vertical scrolling or
+extends below the viewport. These checks guard responsive sizing and state
+transitions; they do not replace native TV focus, remote-control, or overscan
+testing.
 
 GitHub Actions performs these checks and verifies generated TV/mobile Android manifests. Its actions are pinned to commit SHAs. The workflow is read-only and does not publish, deploy, build signed releases, or provision cloud services.
 
@@ -271,9 +283,10 @@ An update requires the same application ID and compatible signing key. Switching
 ## Repository layout and conventions
 
 ```text
-src/app/_layout.tsx         Minimal Router root
-src/app/index.tsx           Home, weekly plan, and session screens
-src/workout/               Source plan, energy presets, session logic, form cues
+src/app/_layout.tsx         Router root, font loading, and native splash handoff
+src/app/index.tsx           Weekly-plan/session controller and responsive frame
+src/screens/               Weekly Plan and Active Workout presentations
+src/workout/               Source plan, progress selectors, session logic, form cues
 src/components/            Shared remote-friendly button
 assets/fonts/              Bundled Baloo 2 / Nunito fonts and OFL licenses
 assets/splash-icon.png     Transparent native splash mark
@@ -295,14 +308,14 @@ Environment files, generated output, native projects, and signing credentials ar
 
 ## Current energy behavior
 
-- **Gentle:** one fewer set per exercise (minimum one), lower rep/time target, 45-second rest.
-- **Steady:** source sets and rep/time ranges, 45-second rest.
-- **Energized:** source sets, upper rep/time target, 45-second rest.
+- **Gentle:** lower rep/time target while retaining the reference plan's two strength sets and a 45-second recovery.
+- **Steady:** reference rep/time range, two strength sets, and a 45-second recovery.
+- **Energized:** upper rep/time target, or the documented progression target where one exists, while retaining two strength sets and a 45-second recovery.
 
-These are explicit app presets, not rules from the PDF. Weight choices never change automatically. Routines retain the PDF's starting loads; suggested future load progressions are not automated. Sets are marked complete manually, including timed holds and both sides of unilateral movements. The rest countdown stops at zero and waits for the user to continue. Back pauses an active session; Back again resumes. Ending early returns home without recording a completed workout.
+These are explicit app presets, not rules from the reference plan. Weight choices never change automatically. Routines retain the reference plan's starting loads; suggested future load progressions are not automated. Core days expose the reference plan's independent one- or two-round choice. Sets are marked complete manually, including timed holds and both sides of unilateral movements. Timed exercises start only when the user starts their dedicated timer; the timer pauses with the workout, gives short soft cues at two and one seconds, and gives the longer final cue exactly at zero. For per-side holds, reset or restart the timer for the other side before marking the set complete. Sessions use round order: set 1 moves through every scheduled exercise (including a day's core add-on), then set 2 repeats exercises that have a second prescribed set. The app's 45-second recovery timer begins after each completed set, stops at zero, and waits for the user to continue; users can also continue early. Approximate remaining time scales the workout's duration range by prescribed sets and completed-set progress; it is not an elapsed-time prediction. The Weekly Plan includes the reference cardio settings, progression rules, metrics guidance, and symptom cautions under **Plan guidance + safety**. The current plan week can be advanced manually when recovery is good; this in-memory selection resets when the app reloads. Back pauses an active session; Back again resumes. Ending early or finishing returns to the previously selected Weekly Plan day without recording workout history.
 
 The selected visual direction uses bundled Baloo 2 ExtraBold and Nunito (SIL Open Font License from the Google Fonts repository), plus Expo Ionicons. No AI image generation was used during implementation.
 
 ## Launcher and splash artwork
 
-The Android launcher name is **GetFit**. Expo config references the square icon at `assets/icon.png`, TV banner at `assets/tv-banner.png`, and transparent native splash mark at `assets/splash-icon.png`. The root layout keeps the splash visible until bundled fonts are ready. Android and Android TV then use a seamless matched-background handoff to the welcome screen; iOS uses Expo's native fade option. The simple smiling kettlebell assets are rendered locally with `python3 scripts/render-launcher.py` (requires Pillow); no image-generation service is used. After changing these assets, clean-prebuild and rebuild the APK to update the installed launcher and splash resources.
+The Android launcher name is **GetFit**. Expo config references the square icon at `assets/icon.png`, TV banner at `assets/tv-banner.png`, and transparent native splash mark at `assets/splash-icon.png`. The root layout keeps the splash visible until bundled fonts are ready. Android and Android TV then use a seamless matched-background handoff to the Weekly Plan; iOS uses Expo's native fade option. The simple smiling kettlebell assets are rendered locally with `python3 scripts/render-launcher.py` (requires Pillow); no image-generation service is used. After changing these assets, clean-prebuild and rebuild the APK to update the installed launcher and splash resources.
