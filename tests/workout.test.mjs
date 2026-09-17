@@ -111,7 +111,7 @@ test('progress reports total work, time remaining, and completed/current/upcomin
   assert.equal(progress.remainingMinutes, 23);
   assert.equal(progress.sectionLabel, 'Recovery');
   assert.equal(progress.activeExercise, 1);
-  assert.deepEqual(progress.exerciseStatuses.slice(0, 3), ['completed', 'current', 'upcoming']);
+  assert.deepEqual(progress.exerciseStatuses.slice(0, 3), ['upcoming', 'current', 'upcoming']);
 
   state = sessionReducer(state, { type: 'continue' });
   assert.equal(getSessionProgress(state).sectionLabel, 'Set 1 of 2');
@@ -127,6 +127,9 @@ test('progress reports total work, time remaining, and completed/current/upcomin
   state = sessionReducer(state, { type: 'continue' });
   assert.equal(state.exercise, 0);
   assert.equal(state.set, 2);
+  state = sessionReducer(state, { type: 'complete-set' });
+  progress = getSessionProgress(state);
+  assert.deepEqual(progress.exerciseStatuses.slice(0, 3), ['completed', 'current', 'upcoming']);
 });
 
 test('week 2 Thursday combines Workout B with the reference Core 1 sequence', () => {

@@ -79,7 +79,8 @@ export function getSessionProgress(session: Session): SessionProgress {
   const activeSet = session.phase === 'complete' ? session.set : nextPosition?.set ?? session.set;
   const exerciseStatuses = exercises.map((item, index): ExerciseStatus => {
     if (session.phase === 'complete') return 'completed';
-    if (prescription(item, session.energy).sets < activeSet || index < activeExercise) return 'completed';
+    const prescribedSets = prescription(item, session.energy).sets;
+    if (prescribedSets < activeSet || (prescribedSets === activeSet && index < activeExercise)) return 'completed';
     if (index === activeExercise) return 'current';
     return 'upcoming';
   });
