@@ -196,11 +196,19 @@ Every script sets `EXPO_TV` explicitly, so an inherited shell setting does not s
 
 ```sh
 npm run check                 # strict types, lint, scaffold tests
+npx playwright install chromium # one-time browser runtime for E2E checks
+npm run test:e2e              # major-screen vertical-fit checks
 npx expo install --check       # SDK dependency compatibility
 npm run export:web            # production web bundle
 npm run export:android        # production Android TV JS/assets bundle
 npm run prebuild:tv -- --no-install
 ```
+
+The Playwright suite traverses the home, plan, active exercise, paused, rest,
+and completion screens at 960×540, 1024×576, and 1280×720 logical landscape
+viewports. It fails when a major screen needs vertical scrolling or extends
+below the viewport. This guards responsive layout sizing; it does not replace
+native TV focus, remote-control, or overscan testing.
 
 GitHub Actions performs these checks and verifies generated TV/mobile Android manifests. Its actions are pinned to commit SHAs. The workflow is read-only and does not publish, deploy, build signed releases, or provision cloud services.
 
@@ -268,6 +276,7 @@ src/app/index.tsx           Home, weekly plan, and session screens
 src/workout/               Source plan, energy presets, session logic, form cues
 src/components/            Shared remote-friendly button
 assets/fonts/              Bundled Baloo 2 / Nunito fonts and OFL licenses
+assets/splash-icon.png     Transparent native splash mark
 design/                    Selected visual target, asset prompts, QA evidence
 assets/tv-banner.png        Disposable 320 x 180 development banner
 app.json                   App identity and config plugins
@@ -294,6 +303,6 @@ These are explicit app presets, not rules from the PDF. Weight choices never cha
 
 The selected visual direction uses bundled Baloo 2 ExtraBold and Nunito (SIL Open Font License from the Google Fonts repository), plus Expo Ionicons. No AI image generation was used during implementation.
 
-## Launcher artwork
+## Launcher and splash artwork
 
-The Android launcher name is **GetFit**. Expo config references the square icon at `assets/icon.png` and TV banner at `assets/tv-banner.png`. The simple smiling kettlebell is rendered locally with `python3 scripts/render-launcher.py` (requires Pillow); no image-generation service is used. After changing these assets, clean-prebuild and rebuild the APK to update the installed launcher entry.
+The Android launcher name is **GetFit**. Expo config references the square icon at `assets/icon.png`, TV banner at `assets/tv-banner.png`, and transparent native splash mark at `assets/splash-icon.png`. The root layout keeps the splash visible until bundled fonts are ready. Android and Android TV then use a seamless matched-background handoff to the welcome screen; iOS uses Expo's native fade option. The simple smiling kettlebell assets are rendered locally with `python3 scripts/render-launcher.py` (requires Pillow); no image-generation service is used. After changing these assets, clean-prebuild and rebuild the APK to update the installed launcher and splash resources.

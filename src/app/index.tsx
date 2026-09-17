@@ -1,7 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useFonts } from 'expo-font';
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { RemoteButton, palette, type IconName } from '../components/RemoteButton';
 import { ExerciseArt } from '../workout/ExerciseArt';
 import { energies, energyDetails, getWeek, prescription, weekdays, workouts, type Energy, type WorkoutId } from '../workout/plan';
@@ -10,16 +9,14 @@ import { useRemoteNavigation } from '../workout/useRemoteNavigation';
 
 const energyIcons: Record<Energy, IconName> = { Gentle: 'leaf-outline', Steady: 'sunny-outline', Energized: 'flash-outline' };
 type Screen = 'home' | 'plan' | 'session';
+
 export default function Index() {
-  const [fontsLoaded, fontError] = useFonts({
-    Baloo: require('../../assets/fonts/Baloo2-ExtraBold.ttf'),
-    Nunito: require('../../assets/fonts/Nunito-SemiBold.ttf'),
-    NunitoBold: require('../../assets/fonts/Nunito-ExtraBold.ttf'),
-    ...Ionicons.font,
-  });
   const { width, height } = useWindowDimensions();
   const narrow = width < 760;
-  const s = narrow ? Math.max(0.64, Math.min(0.85, width / 650)) : Math.max(0.55, Math.min(width / 1600, height / 900));
+  const phone = width < 520;
+  const compactLandscape = !narrow && height <= 720;
+  const baseScale = narrow ? Math.max(0.64, Math.min(0.85, width / 650)) : Math.max(0.55, Math.min(width / 1600, height / 900));
+  const s = compactLandscape ? baseScale * 0.9 : baseScale;
   const [screen, setScreen] = useState<Screen>('home');
   const [week, setWeek] = useState(1);
   const [day, setDay] = useState(0);
@@ -48,14 +45,11 @@ export default function Index() {
   const text = (size: number, bold = false) => ({ fontFamily: bold ? 'NunitoBold' : 'Nunito', fontSize: size * s, color: palette.ink });
   const heading = (size: number) => ({ fontFamily: 'Baloo', fontSize: size * s, lineHeight: size * s * 1.05, color: palette.ink });
   const begin = () => { setSession(startSession(workout, energy)); setScreen('session'); };
-  if (!fontsLoaded && !fontError) return <View style={styles.loading}><Text>Getting ready…</Text></View>;
-  if (fontError) return <View style={styles.loading}><Text>Unable to load the bundled fonts. Please reopen the app.</Text></View>;
-
   const energyControl = <View style={{ gap: 10 * s }}>
     <Text style={text(28, true)}>Energy level</Text>
-    <View accessibilityLabel="Energy level" style={[styles.energy, { borderRadius: 38 * s, padding: 3 * s }]}>
+    <View accessibilityLabel="Energy level" style={[styles.energy, phone && styles.energyStacked, { borderRadius: 38 * s, padding: 3 * s }]}>
       {energies.map(value => <RemoteButton key={value} label={value} icon={energyIcons[value]} selected={energy === value} scale={s * 0.91}
-        onFocus={() => setEnergy(value)} onPress={() => setEnergy(value)} style={styles.energyOption} testID={`energy-${value.toLowerCase()}`} />)}
+        onFocus={() => setEnergy(value)} onPress={() => setEnergy(value)} style={[styles.energyOption, phone && styles.energyOptionPhone]} testID={`energy-${value.toLowerCase()}`} />)}
     </View>
     <Text accessibilityLiveRegion="polite" style={[text(22), { minHeight: 42 * s }]}>
       {energy === 'Steady' && workout !== 'C' ? 'Your original plan · 2 sets per exercise' : energyDetails[energy]}
@@ -66,8 +60,12 @@ export default function Index() {
   if (screen === 'home') {
     body = <View key="home" style={[styles.columns, narrow && styles.stacked, { gap: 48 * s }]}>
       <View style={[styles.homeCopy, narrow && { flex: undefined }, { gap: 16 * s }]}>
+        <View style={[styles.brand, { gap: 12 * s }]}>
+          <Image accessibilityIgnoresInvertColors source={require('../../assets/brand-mark.png')} resizeMode="contain" style={{ width: 64 * s, height: 64 * s }} />
+          <Text style={heading(36)}>GetFit</Text>
+        </View>
         <View style={[styles.badge, { paddingVertical: 10 * s, paddingHorizontal: 24 * s }]}><Text style={[text(24, true), { letterSpacing: 2 * s }]}>WEEK {week} · WORKOUT {workout}</Text></View>
-        <Text accessibilityRole="header" style={[heading(83), { marginTop: 12 * s }]}>A little stronger,{ '\n' }at your pace.</Text>
+        <Text accessibilityRole="header" style={[heading(phone ? 62 : 83), { marginTop: 12 * s }]}>A little stronger,{ '\n' }at your pace.</Text>
         <Text style={[text(36), { marginTop: 4 * s, marginBottom: 8 * s }]}>7 exercises · {energy === 'Steady' ? workouts[workout].duration : 'your pace'}</Text>
         {energyControl}
         <RemoteButton key={`start-${homeFocus}`} label="Start workout" icon="play" primary scale={s} onPress={begin} preferred={homeFocus === 'start'} testID="start-workout" style={{ minHeight: 108 * s }} />
@@ -137,27 +135,33 @@ export default function Index() {
     }
   }
   return <View style={styles.root}>
-    <ScrollView contentContainerStyle={[styles.scroll, { paddingHorizontal: narrow ? 22 : 88 * s, paddingTop: 54 * s, paddingBottom: 20 * s }]}>
-      {body}
-      <View style={[styles.footer, { marginTop: 28 * s, paddingTop: 18 * s, gap: 38 * s }]}>
+    <ScrollView testID="screen-scroll"
+      contentContainerStyle={[styles.scroll, compactLandscape && styles.compactScroll,
+        { paddingHorizontal: narrow ? 22 : 88 * s, paddingTop: (compactLandscape ? 28 : 54) * s, paddingBottom: (compactLandscape ? 12 : 20) * s }]}>
+      <View testID={`screen-${screen === 'session' && session?.paused ? 'paused' : screen === 'session' ? session?.phase : screen}`} style={styles.screenBody}>{body}</View>
+      {!compactLandscape && <View style={[styles.footer, { marginTop: 28 * s, paddingTop: 18 * s, gap: 38 * s }]}>
         <View style={styles.legend}><Ionicons name="move-outline" size={27 * s} color={palette.muted} /><Text style={text(21)}>Arrows · Move</Text></View>
         <View style={styles.legend}><Ionicons name="radio-button-on-outline" size={27 * s} color={palette.muted} /><Text style={text(21)}>Select · Choose</Text></View>
         <View style={styles.legend}><Ionicons name="return-down-back-outline" size={27 * s} color={palette.muted} /><Text style={text(21)}>Back · {screen === 'session' ? (session?.phase === 'complete' ? 'Home' : 'Pause / resume') : 'Return'}</Text></View>
-      </View>
+      </View>}
     </ScrollView>
   </View>;
 }
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.cream },
-  loading: { flex: 1, backgroundColor: palette.cream, justifyContent: 'center', alignItems: 'center' },
   scroll: { flexGrow: 1 },
+  compactScroll: { height: '100%' },
+  screenBody: { flex: 1 },
   columns: { flex: 1, flexDirection: 'row' },
   stacked: { flexDirection: 'column' },
   homeCopy: { flex: 1, justifyContent: 'center' },
+  brand: { flexDirection: 'row', alignItems: 'center' },
   artColumn: { flex: 1.08 },
   badge: { alignSelf: 'flex-start', borderRadius: 40, backgroundColor: '#FAD6C8' },
   energy: { flexDirection: 'row', backgroundColor: '#FCE6DD', borderColor: '#F4D4C6', borderWidth: 2 },
+  energyStacked: { flexDirection: 'column' },
   energyOption: { flex: 1, paddingHorizontal: 6, borderColor: 'transparent', backgroundColor: 'transparent' },
+  energyOptionPhone: { flex: undefined },
   planLink: { alignSelf: 'center', minWidth: '65%' },
   footer: { borderTopColor: palette.border, borderTopWidth: 2, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
   legend: { flexDirection: 'row', gap: 10, alignItems: 'center' },
