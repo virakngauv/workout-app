@@ -83,12 +83,50 @@ test('weekly plan and active workout remain usable on a phone-sized layout', asy
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await expect(page.getByTestId('screen-plan')).toBeVisible();
+  const currentDay = (new Date().getDay() + 6) % 7;
+  await expect(page.getByTestId(`day-${currentDay}`)).toBeFocused();
 
   await page.getByTestId('day-0').click();
-  await page.getByTestId('start-workout').click();
+  await page.getByTestId('start-workout').focus();
+  await page.keyboard.press('Enter');
   await expect(page.getByTestId('screen-exercise')).toBeVisible();
 
   const widths = await page.evaluate(() => ({ viewport: window.innerWidth, document: document.documentElement.scrollWidth }));
   expect(widths.document).toBeLessThanOrEqual(widths.viewport);
   await expect(page.getByTestId('session-primary')).toBeVisible();
+});
+
+test('seconds-based exercises expose a user-controlled timer', async ({ page }) => {
+  await page.setViewportSize({ width: 960, height: 540 });
+  await page.goto('/');
+  const currentDay = (new Date().getDay() + 6) % 7;
+  await expect(page.getByTestId(`day-${currentDay}`)).toBeFocused();
+  await page.getByTestId('week-2').click();
+  await page.getByTestId('day-3').click();
+  const gentle = page.getByTestId('energy-gentle');
+  await gentle.focus();
+  await expect(gentle).toHaveAttribute('aria-selected', 'true');
+  await page.getByTestId('start-workout').focus();
+  await page.keyboard.press('Enter');
+
+  const primary = page.getByTestId('session-primary');
+  for (let exercise = 0; exercise < 6; exercise += 1) {
+    await primary.click();
+    await primary.click();
+  }
+
+  await expect(page.getByTestId('current-exercise-name')).toHaveText('Side plank');
+  await expect(page.getByTestId('exercise-timer')).toContainText('TIMER · EACH SIDE');
+  const countdown = page.getByTestId('exercise-timer-countdown');
+  const toggle = page.getByTestId('exercise-timer-toggle');
+  await expect(countdown).toHaveText('0:15');
+  await expect(toggle).toHaveAccessibleName('Start timer');
+  await toggle.click();
+  await expect(toggle).toHaveAccessibleName('Pause timer');
+  await expect(countdown).toHaveText('0:14', { timeout: 2_000 });
+  await toggle.click();
+  await page.waitForTimeout(1_100);
+  await expect(countdown).toHaveText('0:14');
+  await page.getByTestId('exercise-timer-reset').click();
+  await expect(countdown).toHaveText('0:15');
 });

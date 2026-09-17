@@ -1,4 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useAudioPlayer, type AudioPlayer } from 'expo-audio';
+import { useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, type DimensionValue } from 'react-native';
 import { RemoteButton, palette } from '../components/RemoteButton';
 import { ExerciseArt } from '../workout/ExerciseArt';
@@ -21,11 +23,22 @@ type Props = {
   onReturnToPlan: () => void;
 };
 
+function replay(player: AudioPlayer) {
+  void player.seekTo(0).then(() => player.play()).catch(() => undefined);
+}
+
+function formatTimer(seconds: number) {
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
 export function ActiveWorkoutScreen({ session, scale, narrow, compactLandscape, dispatch, onReturnToPlan }: Props) {
   const exercises = getSessionExercises(session);
   const sessionTitle = getSessionTitle(session);
   const item = exercises[session.exercise]!;
   const dose = prescription(item, session.energy);
+  const shortBeep = useAudioPlayer(require('../../assets/audio/timer-short.wav'));
+  const longBeep = useAudioPlayer(require('../../assets/audio/timer-long.wav'));
+  const previousTimer = useRef({ exercise: session.exercise, set: session.set, remaining: session.exerciseTimerRemaining });
   const progress = getSessionProgress(session);
   const nextPosition = getNextSessionPosition(session);
   const nextItem = nextPosition ? exercises[nextPosition.exercise] : undefined;
@@ -40,6 +53,16 @@ export function ActiveWorkoutScreen({ session, scale, narrow, compactLandscape, 
     fontSize: size * scale,
     lineHeight: size * scale * 1.03,
   });
+
+  useEffect(() => {
+    const previous = previousTimer.current;
+    previousTimer.current = { exercise: session.exercise, set: session.set, remaining: session.exerciseTimerRemaining };
+    if (previous.exercise !== session.exercise || previous.set !== session.set
+      || previous.remaining === null || session.exerciseTimerRemaining === null) return;
+    if (session.exerciseTimerRemaining >= previous.remaining) return;
+    if (session.exerciseTimerRemaining === 2 || session.exerciseTimerRemaining === 1) replay(shortBeep);
+    if (session.exerciseTimerRemaining === 0) replay(longBeep);
+  }, [longBeep, session.exercise, session.exerciseTimerRemaining, session.set, shortBeep]);
 
   const progressHeader = <View style={[styles.progressHeader, { gap: 9 * scale }]}>
     <View style={styles.progressSummary}>
@@ -118,6 +141,23 @@ export function ActiveWorkoutScreen({ session, scale, narrow, compactLandscape, 
         </> : <>
           <Text style={heading(52)}>{dose.target}</Text>
           <Text style={text(25, true)}>{progress.sectionLabel} · {item.load}</Text>
+          {dose.durationSeconds && session.exerciseTimerRemaining !== null && <View testID="exercise-timer"
+            style={[styles.exerciseTimer, { borderRadius: 18 * scale, padding: 10 * scale, gap: 10 * scale }]}>
+            <View style={styles.timerCopy}>
+              <Text style={text(16, true)}>{item.unit === 'seconds/side' ? 'TIMER · EACH SIDE' : 'EXERCISE TIMER'}</Text>
+              <Text testID="exercise-timer-countdown" accessibilityLiveRegion="polite"
+                style={[heading(43), { fontVariant: ['tabular-nums'] }]}>{formatTimer(session.exerciseTimerRemaining)}</Text>
+            </View>
+            <View style={[styles.timerActions, { gap: 7 * scale }]}>
+              <RemoteButton testID="exercise-timer-toggle"
+                label={session.exerciseTimerRemaining === 0 ? 'Restart timer' : session.exerciseTimerRunning ? 'Pause timer'
+                  : session.exerciseTimerRemaining === dose.durationSeconds ? 'Start timer' : 'Resume timer'}
+                icon={session.exerciseTimerRunning ? 'pause' : 'timer-outline'} scale={scale * 0.55}
+                onPress={() => dispatch({ type: 'timer-toggle' })} />
+              <RemoteButton testID="exercise-timer-reset" label="Reset" icon="refresh" scale={scale * 0.55}
+                onPress={() => dispatch({ type: 'timer-reset' })} />
+            </View>
+          </View>}
           {(item.unit === 'side' || item.unit === 'leg' || item.unit === 'seconds/side') &&
             <Text style={text(19)}>Complete both sides before marking this set done.</Text>}
         </>}
@@ -149,6 +189,9 @@ const styles = StyleSheet.create({
   columns: { flex: 1, flexDirection: 'row' },
   stacked: { flexDirection: 'column' },
   workoutCopy: { flex: 1, justifyContent: 'center' },
+  exerciseTimer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFF6EE', borderColor: palette.border, borderWidth: 2 },
+  timerCopy: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  timerActions: { flexDirection: 'row' },
   sectionBadge: { alignSelf: 'flex-start', backgroundColor: '#FFD2BF' },
   controls: { marginTop: 'auto' },
   artColumn: { flex: 1.05 },

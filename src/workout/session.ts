@@ -10,8 +10,17 @@ export type Session = {
   phase: 'exercise' | 'rest' | 'complete';
   remaining: number;
   paused: boolean;
+  exerciseTimerRemaining: number | null;
+  exerciseTimerRunning: boolean;
 };
-export type SessionAction = { type: 'complete-set' } | { type: 'continue' } | { type: 'tick' } | { type: 'pause' } | { type: 'resume' };
+export type SessionAction =
+  | { type: 'complete-set' }
+  | { type: 'continue' }
+  | { type: 'tick' }
+  | { type: 'pause' }
+  | { type: 'resume' }
+  | { type: 'timer-toggle' }
+  | { type: 'timer-reset' };
 export type SessionPosition = { exercise: number; set: number };
 
 export const startSession = (workout: WorkoutId, energy: Energy, core?: WorkoutId): Session => ({
@@ -24,6 +33,8 @@ export const startSession = (workout: WorkoutId, energy: Energy, core?: WorkoutI
   phase: 'exercise',
   remaining: 0,
   paused: false,
+  exerciseTimerRemaining: prescription(workouts[workout].exercises[0]!, energy).durationSeconds,
+  exerciseTimerRunning: false,
 });
 
 export function getSessionExercises(session: Pick<Session, 'workout' | 'core'>): Exercise[] {
@@ -96,17 +107,47 @@ export function sessionReducer(state: Session, action: SessionAction): Session {
   if (action.type === 'pause') return state.phase === 'complete' ? state : { ...state, paused: true };
   if (action.type === 'resume') return { ...state, paused: false };
   if (state.paused || state.phase === 'complete') return state;
-  if (action.type === 'tick') return state.phase === 'rest' ? { ...state, remaining: Math.max(0, state.remaining - 1) } : state;
   const exercises = getSessionExercises(state);
   const item = exercises[state.exercise]!;
   const target = prescription(item, state.energy);
+  if (action.type === 'timer-toggle' && state.phase === 'exercise' && target.durationSeconds) {
+    return state.exerciseTimerRemaining === 0
+      ? { ...state, exerciseTimerRemaining: target.durationSeconds, exerciseTimerRunning: true }
+      : { ...state, exerciseTimerRunning: !state.exerciseTimerRunning };
+  }
+  if (action.type === 'timer-reset' && state.phase === 'exercise' && target.durationSeconds) {
+    return { ...state, exerciseTimerRemaining: target.durationSeconds, exerciseTimerRunning: false };
+  }
+  if (action.type === 'tick') {
+    if (state.phase === 'rest') return { ...state, remaining: Math.max(0, state.remaining - 1) };
+    if (state.phase === 'exercise' && state.exerciseTimerRunning && state.exerciseTimerRemaining !== null) {
+      const exerciseTimerRemaining = Math.max(0, state.exerciseTimerRemaining - 1);
+      return { ...state, exerciseTimerRemaining, exerciseTimerRunning: exerciseTimerRemaining > 0 };
+    }
+    return state;
+  }
   if (action.type === 'complete-set' && state.phase === 'exercise') {
     const next = getNextSessionPosition(state);
-    return { ...state, completedSets: state.completedSets + 1, phase: next ? 'rest' : 'complete', remaining: next ? target.rest : 0 };
+    return {
+      ...state,
+      completedSets: state.completedSets + 1,
+      phase: next ? 'rest' : 'complete',
+      remaining: next ? target.rest : 0,
+      exerciseTimerRunning: false,
+    };
   }
   if (action.type === 'continue' && state.phase === 'rest') {
     const next = getNextSessionPosition(state);
-    return next ? { ...state, ...next, phase: 'exercise', remaining: 0 } : { ...state, phase: 'complete', remaining: 0 };
+    if (!next) return { ...state, phase: 'complete', remaining: 0, exerciseTimerRunning: false };
+    const nextTimer = prescription(exercises[next.exercise]!, state.energy).durationSeconds;
+    return {
+      ...state,
+      ...next,
+      phase: 'exercise',
+      remaining: 0,
+      exerciseTimerRemaining: nextTimer,
+      exerciseTimerRunning: false,
+    };
   }
   return state;
 }

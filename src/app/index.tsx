@@ -44,10 +44,11 @@ export default function Index() {
 
   useRemoteNavigation(onBack);
   useEffect(() => {
-    if (screen !== 'session' || session?.phase !== 'rest' || session.paused) return;
+    const ticking = session?.phase === 'rest' || (session?.phase === 'exercise' && session.exerciseTimerRunning);
+    if (screen !== 'session' || !ticking || session.paused) return;
     const timer = setInterval(() => dispatch({ type: 'tick' }), 1000);
     return () => clearInterval(timer);
-  }, [dispatch, screen, session?.paused, session?.phase]);
+  }, [dispatch, screen, session?.exerciseTimerRunning, session?.paused, session?.phase]);
 
   const screenState = screen === 'plan'
     ? 'plan'

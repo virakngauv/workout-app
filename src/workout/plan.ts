@@ -65,9 +65,11 @@ export const energyDetails: Record<Energy, string> = {
 };
 export function prescription(item: Exercise, energy: Energy) {
   const sets = energy === 'Gentle' ? Math.max(1, item.sets - 1) : item.sets;
-  const amount = energy === 'Steady' && item.min !== item.max ? `${item.min}–${item.max}` : String(energy === 'Energized' ? item.max : item.min);
+  const targetAmount = energy === 'Energized' ? item.max : item.min;
+  const amount = energy === 'Steady' && item.min !== item.max ? `${item.min}–${item.max}` : String(targetAmount);
   const unit = item.unit === 'seconds' ? 'sec' : item.unit === 'seconds/side' ? 'sec / side' : item.unit ? `reps / ${item.unit}` : 'reps';
-  return { sets, target: `${amount} ${unit}`, rest: 45 };
+  const durationSeconds = item.unit === 'seconds' || item.unit === 'seconds/side' ? targetAmount : null;
+  return { sets, target: `${amount} ${unit}`, rest: 45, durationSeconds };
 }
 export type PlanDay = { label: string; workout?: WorkoutId; core?: WorkoutId; note?: string };
 export const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];

@@ -35,6 +35,9 @@ test('energy presets stay within source rep ranges, retain load, and reduce only
   assert.equal(getWeek(2)[3].core, 'Core1');
   assert.deepEqual(workouts.Core1.exercises.map(item => item.id), ['dead-bug', 'side-plank']);
   assert.equal(workouts.B.exercises.some(item => item.id === 'plank'), false);
+  assert.equal(prescription(workouts.Core1.exercises[1], 'Steady').durationSeconds, 15);
+  assert.equal(prescription(workouts.Core1.exercises[1], 'Energized').durationSeconds, 20);
+  assert.equal(prescription(workouts.A.exercises[0], 'Steady').durationSeconds, null);
   assert.equal(weeks.length, 6);
   assert.equal(getWeek(0), weeks[0]);
   assert.equal(getWeek(7), weeks[5]);
@@ -87,6 +90,33 @@ test('rest timer freezes when paused, never goes negative, and never auto-starts
   state = sessionReducer(state, { type: 'continue' });
   assert.equal(state.exercise, 1);
   assert.equal(state.set, 1);
+});
+
+test('exercise timers start explicitly, pause with the workout, stop at zero, and reset for each timed exercise', () => {
+  let state = startSession('Core2', 'Gentle');
+  assert.equal(state.exerciseTimerRemaining, 20);
+  assert.equal(state.exerciseTimerRunning, false);
+  state = sessionReducer(state, { type: 'timer-toggle' });
+  assert.equal(state.exerciseTimerRunning, true);
+  state = sessionReducer(state, { type: 'tick' });
+  assert.equal(state.exerciseTimerRemaining, 19);
+  state = sessionReducer(state, { type: 'pause' });
+  assert.equal(sessionReducer(state, { type: 'tick' }).exerciseTimerRemaining, 19);
+  state = sessionReducer(state, { type: 'resume' });
+  for (let second = 19; second > 0; second -= 1) state = sessionReducer(state, { type: 'tick' });
+  assert.equal(state.exerciseTimerRemaining, 0);
+  assert.equal(state.exerciseTimerRunning, false);
+  state = sessionReducer(state, { type: 'timer-toggle' });
+  assert.equal(state.exerciseTimerRemaining, 20);
+  assert.equal(state.exerciseTimerRunning, true);
+  state = sessionReducer(state, { type: 'timer-reset' });
+  assert.equal(state.exerciseTimerRemaining, 20);
+  assert.equal(state.exerciseTimerRunning, false);
+  state = sessionReducer(state, { type: 'complete-set' });
+  state = sessionReducer(state, { type: 'continue' });
+  assert.equal(state.exercise, 1);
+  assert.equal(state.exerciseTimerRemaining, 30);
+  assert.equal(state.exerciseTimerRunning, false);
 });
 
 test('progress reports total work, time remaining, and completed/current/upcoming sections', () => {
