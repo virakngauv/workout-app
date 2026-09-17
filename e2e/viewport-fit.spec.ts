@@ -32,7 +32,7 @@ for (const viewport of landscapeViewports) {
     await expectScreenFits(page, 'plan');
     const currentDay = (new Date().getDay() + 6) % 7;
     const currentDayButton = page.getByTestId(`day-${currentDay}`);
-    await expect(currentDayButton).toHaveAttribute('aria-selected', 'true');
+    await expect(currentDayButton).toHaveAttribute('aria-pressed', 'true');
     await expect(currentDayButton).toBeFocused();
 
     await page.getByTestId('day-6').click();
@@ -105,7 +105,7 @@ test('seconds-based exercises expose a user-controlled timer', async ({ page }) 
   await page.getByTestId('day-3').click();
   const gentle = page.getByTestId('energy-gentle');
   await gentle.focus();
-  await expect(gentle).toHaveAttribute('aria-selected', 'true');
+  await expect(gentle).toHaveAttribute('aria-pressed', 'true');
   await page.getByTestId('start-workout').focus();
   await page.keyboard.press('Enter');
 
