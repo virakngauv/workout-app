@@ -1,14 +1,11 @@
 import { useEffect } from 'react';
-import { BackHandler, Platform } from 'react-native';
+import { Platform } from 'react-native';
 
 // Native TV uses Pressable's built-in directional focus. This browser-only
 // counterpart makes the development preview operable with a keyboard.
 export function useRemoteNavigation(onBack: () => boolean) {
   useEffect(() => {
-    if (Platform.OS !== 'web') {
-      const handler = BackHandler.addEventListener('hardwareBackPress', onBack);
-      return () => handler.remove();
-    }
+    if (Platform.OS !== 'web') return;
     const handle = (event: KeyboardEvent) => {
       if (event.key === 'Escape' || event.key === 'Backspace') {
         if (onBack()) event.preventDefault();

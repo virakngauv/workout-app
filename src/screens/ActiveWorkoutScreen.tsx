@@ -100,9 +100,10 @@ export function ActiveWorkoutScreen({ session, scale, narrow, compactLandscape, 
       <View style={styles.centered}>
         <Ionicons name="pause-circle-outline" size={74 * scale} color="#A56F59" />
         <Text accessibilityRole="header" style={[heading(66), { marginTop: 10 * scale }]}>Workout paused</Text>
+        <Text style={[text(20), { marginTop: 8 * scale }]}>Select Resume to continue · Back returns to plan</Text>
         <Text style={[text(24), { marginTop: 8 * scale }]}>{exercises[progress.activeExercise]?.name} · Set {progress.activeSet}</Text>
         <View style={{ width: narrow ? '100%' : 560 * scale, gap: 14 * scale, marginTop: 26 * scale }}>
-          <RemoteButton label="Resume workout" icon="play" primary preferred scale={scale * 0.85}
+          <RemoteButton testID="resume-workout" label="Resume workout" icon="play" primary preferred scale={scale * 0.85}
             onPress={() => dispatch({ type: 'resume' })} />
           <RemoteButton label="End workout and return to plan" icon="arrow-back" scale={scale * 0.75} onPress={onReturnToPlan} />
         </View>
@@ -167,7 +168,7 @@ export function ActiveWorkoutScreen({ session, scale, narrow, compactLandscape, 
           <RemoteButton label={resting ? (session.remaining ? 'Continue when ready' : 'Start next set') : 'Set complete'}
             icon={resting ? 'play' : 'checkmark'} primary preferred scale={scale * 0.8}
             onPress={() => dispatch({ type: resting ? 'continue' : 'complete-set' })} testID="session-primary" />
-          <RemoteButton label="Pause workout" icon="pause" scale={scale * 0.68} onPress={() => dispatch({ type: 'pause' })} />
+          <RemoteButton testID="pause-workout" label="Pause workout" icon="pause" scale={scale * 0.68} onPress={() => dispatch({ type: 'pause' })} />
         </View>
       </View>
       <View style={[styles.artColumn, narrow && { minHeight: 390 * scale }]}>

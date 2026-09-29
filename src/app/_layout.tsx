@@ -4,9 +4,12 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useCallback } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
+import { PlanProvider } from '../workout/WorkoutRoute';
 
 if (Platform.OS === 'ios') SplashScreen.setOptions({ duration: 350, fade: true });
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
+export const unstable_settings = { initialRouteName: 'index' };
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -25,7 +28,7 @@ export default function RootLayout() {
   return <View onLayout={onRootLayout} style={styles.root}>
     {fontError
       ? <Text>Unable to load the bundled fonts. Please reopen the app.</Text>
-      : <Stack screenOptions={{ headerShown: false }} />}
+      : <PlanProvider><Stack screenOptions={{ headerShown: false }} /></PlanProvider>}
   </View>;
 }
 
