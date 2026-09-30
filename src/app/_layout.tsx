@@ -9,7 +9,7 @@ import { PlanProvider } from '../workout/WorkoutRoute';
 if (Platform.OS === 'ios') SplashScreen.setOptions({ duration: 350, fade: true });
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
-export const unstable_settings = { initialRouteName: 'index' };
+export const unstable_settings = { anchor: 'index' };
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({

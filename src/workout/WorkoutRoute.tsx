@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Redirect, useFocusEffect, useNavigation, useRouter } from 'expo-router';
+import { useFocusEffect, useNavigation, useRouter } from 'expo-router';
 import { createContext, useCallback, useContext, useEffect, useState, type PropsWithChildren } from 'react';
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { palette } from '../components/RemoteButton';
@@ -70,6 +70,11 @@ function WorkoutRouteContent({ screen, plan }: { screen: Screen; plan: ReturnTyp
     if (router.canGoBack()) router.back();
     else router.replace('/');
   }, [router]);
+  const emptyWorkout = screen === 'session' && !session;
+  useFocusEffect(useCallback(() => {
+    if (emptyWorkout) returnToPlan();
+  }, [emptyWorkout, returnToPlan]));
+
   const startWorkout = useCallback(() => router.push('/workout'), [router]);
   const onBack = useCallback(() => {
     if (!focused || !router.canGoBack()) return false;
@@ -114,7 +119,7 @@ function WorkoutRouteContent({ screen, plan }: { screen: Screen; plan: ReturnTyp
   if (!focused) return null;
 
   // A direct workout link on a rest day has no session to display.
-  if (screen === 'session' && !session) return <Redirect href="/" />;
+  if (emptyWorkout) return null;
 
   const footerText = (size: number) => ({ fontFamily: 'Nunito', fontSize: size * scale, color: palette.ink });
   return <View style={styles.root}>

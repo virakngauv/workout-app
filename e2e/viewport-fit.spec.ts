@@ -229,3 +229,21 @@ test('a direct guidance link exposes only the focused route and retains native s
   await expect(page.getByTestId('screen-plan')).toBeVisible();
   await expect(page.getByTestId('screen-scroll')).toHaveCount(1);
 });
+
+
+test('an unavailable direct workout link returns to one plan route with root Back unchanged', async ({ page }) => {
+  // Sunday has no workout. Fix only Date; focus and navigation timers still run.
+  await page.clock.setFixedTime(new Date('2026-09-27T12:00:00Z'));
+  await page.goto('/workout');
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByTestId('screen-plan')).toBeVisible();
+  await expect(page.getByTestId('day-6')).toBeFocused();
+  await expect(page.getByTestId('screen-scroll')).toHaveCount(1);
+  const backWasConsumed = await page.evaluate(() => {
+    const event = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true });
+    window.dispatchEvent(event);
+    return event.defaultPrevented;
+  });
+  expect(backWasConsumed, 'the plan should be the root, without a duplicate plan below it').toBe(false);
+  await expect(page).toHaveURL(/\/$/);
+});
