@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Redirect, useFocusEffect, useRouter } from 'expo-router';
+import { Redirect, useFocusEffect, useNavigation, useRouter } from 'expo-router';
 import { createContext, useCallback, useContext, useEffect, useState, type PropsWithChildren } from 'react';
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { palette } from '../components/RemoteButton';
@@ -39,7 +39,8 @@ export function WorkoutRoute({ screen }: { screen: Screen }) {
 
 function WorkoutRouteContent({ screen, plan }: { screen: Screen; plan: ReturnType<typeof usePlanState> }) {
   const router = useRouter();
-  const [focused, setFocused] = useState(true);
+  const navigation = useNavigation();
+  const [focused, setFocused] = useState(() => navigation.isFocused());
   useFocusEffect(useCallback(() => {
     setFocused(true);
     return () => setFocused(false);

@@ -218,3 +218,14 @@ test('browser history Back also pops the workout route', async ({ page }) => {
   await page.goBack();
   await expect(page.getByTestId('screen-plan')).toBeVisible();
 });
+
+
+test('a direct guidance link exposes only the focused route and retains native stack Back', async ({ page }) => {
+  await page.goto('/guidance');
+  await expect(page.getByTestId('guidance-back')).toBeFocused();
+  await expect(page.getByTestId('screen-scroll')).toHaveCount(1);
+  await expect(page.getByTestId('screen-plan')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('screen-plan')).toBeVisible();
+  await expect(page.getByTestId('screen-scroll')).toHaveCount(1);
+});
