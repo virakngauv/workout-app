@@ -147,7 +147,8 @@ Accept **Allow USB debugging?** on the TV for your computer, even though the con
 
 Troubleshooting:
 
-- **Failed to authenticate / unauthorized:** check for the authorization prompt on the TV. If none appears, toggle USB debugging off and on, then reconnect.
+- **Failed to authenticate / unauthorized:** run ADB without `sudo` to use your normal user's credentials. An authentication failure means ADB reached the TV; check authorization before assuming the router is blocking it. Watch for **Allow USB debugging?** on the TV and accept it.
+- **Already connected, but unauthorized:** `adb connect` reporting "already connected" does not mean the device is authorized. Check with `adb devices -l`; the status must be `device`, rather than `unauthorized`. On the tested Hisense Android 10 TV, toggling **USB debugging off and back on**, then running `adb connect TV_IP:5555` and `adb devices -l` again, changed the status to `device` and allowed installation. Watch for and accept any authorization prompt after toggling.
 - **No route to host / timeout:** verify the IP, network, and that the TV is awake. On macOS, check Privacy & Security → Local Network for the terminal or app running ADB. A successful ping alone does not prove ADB access; try the connection from your normal Terminal and accept any permission prompts. This resolved access during the physical-device setup, though the exact cause was not established.
 - **Connection refused:** the TV may not expose network ADB through USB debugging. Port 5555 is a firmware-dependent option, not a universal Android TV feature.
 
