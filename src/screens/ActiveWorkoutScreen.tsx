@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAudioPlayer, type AudioPlayer } from 'expo-audio';
 import { useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, type DimensionValue } from 'react-native';
+import { RemoteFocusRows } from '../components/RemoteFocusRows';
 import { RemoteButton, palette } from '../components/RemoteButton';
 import { ExerciseArt } from '../workout/ExerciseArt';
 import {
@@ -94,7 +95,7 @@ export function ActiveWorkoutScreen({ session, scale, narrow, compactLandscape, 
   </View>;
 
   if (session.paused) {
-    return <View style={[styles.root, { gap: 16 * scale }]}>
+    return <RemoteFocusRows rows={[{ ids: ['resume-workout'] }, { ids: ['end-workout'] }]}><View style={[styles.root, { gap: 16 * scale }]}>
       {progressHeader}
       {roadmap}
       <View style={styles.centered}>
@@ -105,10 +106,10 @@ export function ActiveWorkoutScreen({ session, scale, narrow, compactLandscape, 
         <View style={{ width: narrow ? '100%' : 560 * scale, gap: 14 * scale, marginTop: 26 * scale }}>
           <RemoteButton testID="resume-workout" label="Resume workout" icon="play" primary preferred scale={scale * 0.85}
             onPress={() => dispatch({ type: 'resume' })} />
-          <RemoteButton label="End workout and return to plan" icon="arrow-back" scale={scale * 0.75} onPress={onReturnToPlan} />
+          <RemoteButton testID="end-workout" label="End workout and return to plan" icon="arrow-back" scale={scale * 0.75} onPress={onReturnToPlan} />
         </View>
       </View>
-    </View>;
+    </View></RemoteFocusRows>;
   }
 
   if (session.phase === 'complete') {
@@ -126,7 +127,13 @@ export function ActiveWorkoutScreen({ session, scale, narrow, compactLandscape, 
   }
 
   const resting = session.phase === 'rest';
-  return <View style={[styles.root, { gap: 12 * scale }]}>
+  const rows = [
+    ...(!resting && dose.durationSeconds && session.exerciseTimerRemaining !== null
+      ? [{ ids: ['exercise-timer-toggle', 'exercise-timer-reset'] }] : []),
+    { ids: ['session-primary'] },
+    { ids: ['pause-workout'] },
+  ];
+  return <RemoteFocusRows rows={rows}><View style={[styles.root, { gap: 12 * scale }]}>
     {progressHeader}
     {roadmap}
     <View style={[styles.columns, narrow && styles.stacked, { gap: 30 * scale }]}>
@@ -175,7 +182,7 @@ export function ActiveWorkoutScreen({ session, scale, narrow, compactLandscape, 
         <ExerciseArt exercise={resting && nextItem ? nextItem : item} scale={scale * (compactLandscape ? 0.9 : 1)} />
       </View>
     </View>
-  </View>;
+  </View></RemoteFocusRows>;
 }
 
 const styles = StyleSheet.create({

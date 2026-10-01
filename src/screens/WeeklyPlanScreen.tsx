@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
+import { RemoteFocusRows } from '../components/RemoteFocusRows';
 import { RemoteButton, palette, type IconName } from '../components/RemoteButton';
 import {
   energies,
@@ -76,7 +77,17 @@ export function WeeklyPlanScreen({
     lineHeight: size * scale * 1.05,
   });
 
-  return <View style={[styles.root, { gap: 18 * scale }]}>
+  const rows = [
+    { ids: [...[1, 2, 3, 4, 5, 6].map(value => `week-${value}`), ...(week !== currentWeek ? ['set-current-week'] : [])], selected: `week-${week}` },
+    { ids: weekdays.map((_, index) => `day-${index}`), selected: `day-${day}` },
+    ...(workout ? [
+      { ids: energies.map(value => `energy-${value.toLowerCase()}`), selected: `energy-${energy.toLowerCase()}` },
+      ...(core ? [{ ids: ['core-rounds-1', 'core-rounds-2'], selected: `core-rounds-${coreRounds}` }] : []),
+      { ids: ['start-workout'] },
+    ] : []),
+    { ids: ['open-plan-guidance'] },
+  ];
+  return <RemoteFocusRows rows={rows}><View style={[styles.root, { gap: 18 * scale }]}>
     <View style={[styles.header, narrow && styles.headerNarrow]}>
       <View style={[styles.brand, { gap: 12 * scale }]}>
         <Image accessibilityIgnoresInvertColors source={require('../../assets/brand-mark.png')} resizeMode="contain"
@@ -159,7 +170,7 @@ export function WeeklyPlanScreen({
       <RemoteButton label="Plan guidance + safety" icon="information-circle-outline" scale={scale * 0.58}
         onPress={onOpenGuidance} testID="open-plan-guidance" />
     </View>
-  </View>;
+  </View></RemoteFocusRows>;
 }
 
 const styles = StyleSheet.create({

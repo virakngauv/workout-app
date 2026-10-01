@@ -247,3 +247,71 @@ test('an unavailable direct workout link returns to one plan route with root Bac
   expect(backWasConsumed, 'the plan should be the root, without a duplicate plan below it').toBe(false);
   await expect(page).toHaveURL(/\/$/);
 });
+
+for (const width of [960, 1920]) {
+  test(`vertical row navigation retains selected options at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: width === 960 ? 540 : 1080 });
+    await page.goto('/');
+    await expect(await getTodayButton(page)).toBeFocused();
+    await page.getByTestId('day-2').click();
+    await page.getByTestId('week-4').click();
+    for (const id of ['day-2', 'energy-steady', 'start-workout']) {
+      await page.keyboard.press('ArrowDown');
+      await expect(page.getByTestId(id)).toBeFocused();
+    }
+    for (const id of ['energy-steady', 'day-2', 'week-4']) {
+      await page.keyboard.press('ArrowUp');
+      await expect(page.getByTestId(id)).toBeFocused();
+    }
+    await expect(page.getByTestId('day-2')).toHaveAttribute('aria-pressed', 'true');
+    await page.getByTestId('day-0').click();
+    await page.getByTestId('core-rounds-2').click();
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByTestId('start-workout')).toBeFocused();
+    await page.keyboard.press('ArrowUp');
+    await expect(page.getByTestId('core-rounds-2')).toBeFocused();
+    await page.keyboard.press('ArrowUp');
+    await expect(page.getByTestId('energy-steady')).toBeFocused();
+    await page.getByTestId('day-6').click();
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByTestId('open-plan-guidance')).toBeFocused();
+    await page.keyboard.press('ArrowUp');
+    await expect(page.getByTestId('day-6')).toBeFocused();
+    await page.keyboard.press('ArrowUp');
+    await expect(page.getByTestId('week-4')).toBeFocused();
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByTestId('set-current-week')).toBeFocused();
+  });
+}
+
+test('workout rows return to the last timer control and retain explicit pause navigation', async ({ page }) => {
+  await page.goto('/');
+  await expect(await getTodayButton(page)).toBeFocused();
+  await page.getByTestId('week-2').click();
+  await page.getByTestId('day-3').click();
+  await page.getByTestId('energy-gentle').click();
+  await page.getByTestId('start-workout').click();
+  // Reach Side plank without starting its countdown.
+  for (let exercise = 0; exercise < 6; exercise += 1) {
+    await page.getByTestId('session-primary').click();
+    await page.getByTestId('session-primary').click();
+  }
+  await page.getByTestId('exercise-timer-reset').focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByTestId('session-primary')).toBeFocused();
+  await page.keyboard.press('ArrowUp');
+  await expect(page.getByTestId('exercise-timer-reset')).toBeFocused();
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.getByTestId('exercise-timer-toggle')).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByTestId('pause-workout')).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('resume-workout')).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByTestId('end-workout')).toBeFocused();
+  await page.keyboard.press('ArrowUp');
+  await expect(page.getByTestId('resume-workout')).toBeFocused();
+});

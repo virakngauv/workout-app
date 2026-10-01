@@ -110,7 +110,7 @@ Browser preview is optional:
 npm run web
 ```
 
-A browser preview is not a TV focus/navigation test. Exercise the interface using D-pad directions, Select, and Back on an Android TV emulator and real device. The web preview also supports arrows, Enter, and Escape. Browser keyboard checks are not proof of native TV focus behavior.
+A browser preview is not a TV focus/navigation test. Exercise the interface using D-pad directions, Select, and Back on an Android TV emulator and real device. On the Weekly Plan, Up/Down enters the selected week, day, energy, or core-round control; rows without a selection return to their last focused control. Left/Right moves within a row. Rest days skip unavailable workout controls. The web preview also supports arrows, Enter, and Escape. Browser keyboard checks are not proof of native TV focus behavior.
 
 ### Timer cue assets
 

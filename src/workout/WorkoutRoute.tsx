@@ -82,7 +82,7 @@ function WorkoutRouteContent({ screen, plan }: { screen: Screen; plan: ReturnTyp
     return true;
   }, [focused, router]);
 
-  useRemoteNavigation(onBack);
+  useRemoteNavigation(onBack, focused);
   const sessionTimerMode = !focused || screen !== 'session' || session?.paused
     ? null
     : session?.phase === 'rest' && session.remaining > 0
