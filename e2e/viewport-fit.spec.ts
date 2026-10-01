@@ -72,7 +72,7 @@ for (const viewport of landscapeViewports) {
     await expect(page.getByTestId('remaining-summary')).toContainText('About');
     await expect(page.getByTestId('current-exercise-name')).toHaveText('Goblet squat');
 
-    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Pause workout', exact: true }).click();
     await expectScreenFits(page, 'paused');
     await page.getByRole('button', { name: 'Resume workout' }).click();
 
@@ -157,4 +157,161 @@ test('seconds-based exercises expose a user-controlled timer', async ({ page }) 
   await expect(countdown).toHaveText('0:14');
   await page.getByTestId('exercise-timer-reset').click();
   await expect(countdown).toHaveText('0:15');
+});
+
+for (const state of ['exercise', 'rest', 'paused', 'complete'] as const) {
+  test(`Back returns from ${state} to the selected plan without toggling pause`, async ({ page }) => {
+    await page.setViewportSize({ width: 960, height: 540 });
+    await page.goto('/');
+    await expect(await getTodayButton(page)).toBeFocused();
+    await page.getByTestId('week-2').click();
+    await page.getByTestId('day-0').click();
+    await page.getByTestId('energy-gentle').click();
+    await page.getByTestId('start-workout').click();
+    await expect(page).toHaveURL(/\/workout$/);
+    const primary = page.getByTestId('session-primary');
+    if (state === 'rest') await primary.click();
+    if (state === 'paused') {
+      await page.getByTestId('pause-workout').focus();
+      await page.keyboard.press('Enter');
+      await expect(page.getByTestId('resume-workout')).toBeFocused();
+    }
+    if (state === 'complete') {
+      for (let set = 0; set < 12; set += 1) {
+        await primary.click();
+        if (set < 11) await primary.click();
+      }
+    }
+    await expect(page.getByTestId(`screen-${state}`)).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByTestId('screen-plan')).toBeVisible();
+    await expect(page.getByTestId('screen-paused')).toHaveCount(0);
+    await expect(page.getByTestId('week-2')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('day-0')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('day-0')).toBeFocused();
+    await expect(page.getByTestId('energy-gentle')).toHaveAttribute('aria-pressed', 'true');
+    await page.getByTestId('start-workout').click();
+    await expect(page.getByTestId('progress-summary')).toContainText('0 of 12 sets complete');
+    await expect(page.getByTestId('screen-exercise')).toBeVisible();
+  });
+}
+
+test('guidance uses stack Back and root preview Back leaves the plan unchanged', async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('open-plan-guidance').click();
+  await expect(page).toHaveURL(/\/guidance$/);
+  await page.keyboard.press('Backspace');
+  await expect(page.getByTestId('screen-plan')).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('screen-plan')).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
+});
+
+test('browser history Back also pops the workout route', async ({ page }) => {
+  await page.goto('/');
+  await expect(await getTodayButton(page)).toBeFocused();
+  await page.getByTestId('day-0').click();
+  await page.getByTestId('start-workout').click();
+  await expect(page).toHaveURL(/\/workout$/);
+  await page.goBack();
+  await expect(page.getByTestId('screen-plan')).toBeVisible();
+});
+
+
+test('a direct guidance link exposes only the focused route and retains native stack Back', async ({ page }) => {
+  await page.goto('/guidance');
+  await expect(page.getByTestId('guidance-back')).toBeFocused();
+  await expect(page.getByTestId('screen-scroll')).toHaveCount(1);
+  await expect(page.getByTestId('screen-plan')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('screen-plan')).toBeVisible();
+  await expect(page.getByTestId('screen-scroll')).toHaveCount(1);
+});
+
+
+test('an unavailable direct workout link returns to one plan route with root Back unchanged', async ({ page }) => {
+  // Sunday has no workout. Fix only Date; focus and navigation timers still run.
+  await page.clock.setFixedTime(new Date('2026-09-27T12:00:00Z'));
+  await page.goto('/workout');
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByTestId('screen-plan')).toBeVisible();
+  await expect(page.getByTestId('day-6')).toBeFocused();
+  await expect(page.getByTestId('screen-scroll')).toHaveCount(1);
+  const backWasConsumed = await page.evaluate(() => {
+    const event = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true });
+    window.dispatchEvent(event);
+    return event.defaultPrevented;
+  });
+  expect(backWasConsumed, 'the plan should be the root, without a duplicate plan below it').toBe(false);
+  await expect(page).toHaveURL(/\/$/);
+});
+
+for (const width of [960, 1920]) {
+  test(`vertical row navigation retains selected options at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: width === 960 ? 540 : 1080 });
+    await page.goto('/');
+    await expect(await getTodayButton(page)).toBeFocused();
+    await page.getByTestId('day-2').click();
+    await page.getByTestId('week-4').click();
+    for (const id of ['day-2', 'energy-steady', 'start-workout']) {
+      await page.keyboard.press('ArrowDown');
+      await expect(page.getByTestId(id)).toBeFocused();
+    }
+    for (const id of ['energy-steady', 'day-2', 'week-4']) {
+      await page.keyboard.press('ArrowUp');
+      await expect(page.getByTestId(id)).toBeFocused();
+    }
+    await expect(page.getByTestId('day-2')).toHaveAttribute('aria-pressed', 'true');
+    await page.getByTestId('day-0').click();
+    await page.getByTestId('core-rounds-2').click();
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByTestId('start-workout')).toBeFocused();
+    await page.keyboard.press('ArrowUp');
+    await expect(page.getByTestId('core-rounds-2')).toBeFocused();
+    await page.keyboard.press('ArrowUp');
+    await expect(page.getByTestId('energy-steady')).toBeFocused();
+    await page.getByTestId('day-6').click();
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByTestId('open-plan-guidance')).toBeFocused();
+    await page.keyboard.press('ArrowUp');
+    await expect(page.getByTestId('day-6')).toBeFocused();
+    await page.keyboard.press('ArrowUp');
+    await expect(page.getByTestId('week-4')).toBeFocused();
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByTestId('set-current-week')).toBeFocused();
+  });
+}
+
+test('workout rows return to the last timer control and retain explicit pause navigation', async ({ page }) => {
+  await page.goto('/');
+  await expect(await getTodayButton(page)).toBeFocused();
+  await page.getByTestId('week-2').click();
+  await page.getByTestId('day-3').click();
+  await page.getByTestId('energy-gentle').click();
+  await page.getByTestId('start-workout').click();
+  // Reach Side plank without starting its countdown.
+  for (let exercise = 0; exercise < 6; exercise += 1) {
+    await page.getByTestId('session-primary').click();
+    await page.getByTestId('session-primary').click();
+  }
+  await page.getByTestId('exercise-timer-reset').focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByTestId('session-primary')).toBeFocused();
+  await page.keyboard.press('ArrowUp');
+  await expect(page.getByTestId('exercise-timer-reset')).toBeFocused();
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.getByTestId('exercise-timer-toggle')).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByTestId('pause-workout')).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('resume-workout')).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByTestId('end-workout')).toBeFocused();
+  await page.keyboard.press('ArrowUp');
+  await expect(page.getByTestId('resume-workout')).toBeFocused();
 });

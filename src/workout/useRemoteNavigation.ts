@@ -1,14 +1,11 @@
 import { useEffect } from 'react';
-import { BackHandler, Platform } from 'react-native';
+import { Platform } from 'react-native';
 
 // Native TV uses Pressable's built-in directional focus. This browser-only
 // counterpart makes the development preview operable with a keyboard.
-export function useRemoteNavigation(onBack: () => boolean) {
+export function useRemoteNavigation(onBack: () => boolean, enabled = true) {
   useEffect(() => {
-    if (Platform.OS !== 'web') {
-      const handler = BackHandler.addEventListener('hardwareBackPress', onBack);
-      return () => handler.remove();
-    }
+    if (Platform.OS !== 'web' || !enabled) return;
     const handle = (event: KeyboardEvent) => {
       if (event.key === 'Escape' || event.key === 'Backspace') {
         if (onBack()) event.preventDefault();
@@ -18,6 +15,13 @@ export function useRemoteNavigation(onBack: () => boolean) {
       const buttons = Array.from(document.querySelectorAll<HTMLElement>('[role="button"]')).filter(node => node.getBoundingClientRect().width > 0);
       const current = document.activeElement as HTMLElement | null;
       if (!current || !buttons.includes(current)) { buttons[0]?.focus(); event.preventDefault(); return; }
+      const direction = event.key.slice(5).toLowerCase();
+      const destination = current.getAttribute(`data-focus-${direction}`);
+      if (destination) {
+        buttons.find(node => node.getAttribute('data-testid') === destination)?.focus();
+        event.preventDefault();
+        return;
+      }
       const rect = current.getBoundingClientRect();
       const x = rect.x + rect.width / 2, y = rect.y + rect.height / 2;
       const horizontal = event.key === 'ArrowLeft' || event.key === 'ArrowRight';
@@ -34,5 +38,5 @@ export function useRemoteNavigation(onBack: () => boolean) {
     };
     window.addEventListener('keydown', handle);
     return () => window.removeEventListener('keydown', handle);
-  }, [onBack]);
+  }, [enabled, onBack]);
 }

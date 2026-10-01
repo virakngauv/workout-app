@@ -61,8 +61,8 @@ test('the native splash matches the first rendered screen', () => {
 });
 
 test('the session timer effect stays stable across ticks and resets between timer modes', () => {
-  const indexRoute = readFileSync('src/app/index.tsx', 'utf8');
-  assert.match(indexRoute, /const sessionTimerMode = screen !== 'session'/);
+  const indexRoute = readFileSync('src/workout/WorkoutRoute.tsx', 'utf8');
+  assert.match(indexRoute, /const sessionTimerMode = !focused \|\| screen !== 'session'/);
   assert.match(indexRoute, /\? 'rest'[\s\S]*\? 'exercise'/);
   assert.match(indexRoute, /if \(!sessionTimerMode\) return;/);
   assert.match(indexRoute, /\}, \[dispatch, sessionTimerMode\]\);/);
